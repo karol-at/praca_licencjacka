@@ -1,0 +1,14 @@
+{
+  "name": "praca_licencjacka",
+  "version": "1.0.0",
+  "main": "src/index.mjs",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "deno src/index.ts",
+    "prod": "deno -A src/index.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}
