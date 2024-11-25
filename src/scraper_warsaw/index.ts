@@ -20,7 +20,7 @@ const progressString = (date: Date, lastSave: string, errors: number, executing:
 Last data fetch: ${date.toLocaleTimeString()}
 Last data save: ${lastSave}
 Errors caught: ${errors}
-Current executing status: ${executing}}`;
+Current executing status: ${executing}`;
 
 async function getData(
   dataMap: Map<string, GJS.GeoJSON[]>,
