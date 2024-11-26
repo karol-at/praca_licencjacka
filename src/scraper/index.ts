@@ -16,7 +16,13 @@ if (Deno.env.get("DIRECTORY") === undefined) {
   throw new Error("DIRECTORY is not set");
 }
 
-const progressString = (date: Date, lastSave: string, errors: number, executing: boolean) => `Process is executing
+const progressString = (
+  date: Date,
+  lastSave: string,
+  errors: number,
+  executing: boolean,
+) =>
+  `Process is executing
 Last data fetch: ${date.toLocaleTimeString()}
 Last data save: ${lastSave}
 Errors caught: ${errors}
@@ -40,10 +46,9 @@ async function getData(
 //Fetch data every 10 seconds
 cron("*/10 * * * * *", async () => {
   if (executing) {
-    try{
+    try {
       dataMap = await getData(dataMap);
-    }
-    catch (e) {
+    } catch (e) {
       errors.push(e);
     }
   }
@@ -60,19 +65,21 @@ cron("37 4 * * *", () => {
 
 //Save data every 30 minutes
 cron("*/30 * * * *", () => {
-  if (executing === true){
-  GJS.exportGeoJSON(dataMap, today);
-  const date = new Date();
-  lastSave = date.toLocaleTimeString();
+  if (executing === true) {
+    GJS.exportGeoJSON(dataMap, today);
+    const date = new Date();
+    lastSave = date.toLocaleTimeString();
   }
 });
 
 //Daily cleanup
-cron ("30 0 * * *", () => {
+cron("30 0 * * *", () => {
   executing = false;
   GJS.exportGeoJSON(dataMap, today);
   dataMap.clear();
-  const writePath = Deno.env.get("DIRECTORY") ? `${Deno.env.get("DIRECTORY")}/${today}/errors.txt` : "./results";
+  const writePath = Deno.env.get("DIRECTORY")
+    ? `${Deno.env.get("DIRECTORY")}/${today}/errors.txt`
+    : "./results";
   Deno.writeTextFile(writePath, JSON.stringify(errors));
   errors.length = 0;
 });
