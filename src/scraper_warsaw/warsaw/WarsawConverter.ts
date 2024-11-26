@@ -1,6 +1,6 @@
-import { GeoJSON } from "./GeoJSON.ts";
+import { GeoJSON } from "../GeoJSON.ts";
 import { point, polygon, booleanPointInPolygon } from "npm:@turf/turf";
-import { polygons } from './warsaw/Polygons.ts';
+import { polygons } from './Polygons.ts';
 
 //type for data points from Warsaw API
 type WarsawDataPoint = {
