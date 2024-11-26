@@ -17,7 +17,8 @@ type WarsawDataPoint = {
 //angles should contain the minimum and maximum angles for the starting and ending points
 //the elements should be typed in going clockwise on a circle stating from -180 on the left
 type filterCriteria = {
-  polygons: { type: string }[];
+  // deno-lint-ignore no-explicit-any
+  polygons: any[];
   angles: [number[], number[]];
 };
 
