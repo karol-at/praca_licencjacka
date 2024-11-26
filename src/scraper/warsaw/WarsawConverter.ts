@@ -37,7 +37,7 @@ function reduceData(data: WarsawDataPoint[]): WarsawDataPoint[] {
   return results;
 }
 
-function splitData(
+function createSplitPoints(
   data: WarsawDataPoint[],
   criteria: filterCriteria,
 ): number[] {
