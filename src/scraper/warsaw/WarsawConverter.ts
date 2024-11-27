@@ -1,6 +1,15 @@
 import { GeoJSON } from "../GeoJSON.ts";
-import { booleanPointInPolygon, point,} from "npm:@turf/turf";
+import { booleanPointInPolygon, point } from "npm:@turf/turf";
 import { polygons } from "./Polygons.ts";
+
+export function truncateData(
+  data: WarsawDataPoint[],
+  criteria: FilterCriteria,
+): WarsawDataPoint[] {
+  data = reduceData(data);
+  const splitPoints = createSplitPoints(data, criteria);
+  return splitData(data, splitPoints).flat();
+}
 
 //type for data points from Warsaw API
 type WarsawDataPoint = {
@@ -10,22 +19,43 @@ type WarsawDataPoint = {
   Time: string;
   Brigade: string;
   VehicleNumber: string;
+  StartTime: string | null;
 };
 
 //criteria for filtering data
 //polygons should contain the starting and ending points of the route
 //angles should contain the minimum and maximum angles for the starting and ending points
 //the elements should be typed in going clockwise on a circle stating from -180 on the left
-type filterCriteria = {
+type FilterCriteria = {
   // deno-lint-ignore no-explicit-any
   polygons: any[];
   angles: [number[], number[]];
 };
 
-let criteria116: filterCriteria = {
+export const criteria116: FilterCriteria = {
   polygons: [polygons.chomiczowka, polygons.wilanow],
   angles: [[-45, -135], [180, 90]],
 };
+
+export function convertToGeoJSON(data: WarsawDataPoint[]): GeoJSON[] {
+  return data.map((point, index) => {
+    return {
+      type: "Feature",
+      geometry: {
+        type: "Point",
+        coordinates: [point.Lon, point.Lat],
+      },
+      properties: {
+        type: 1,
+        line: point.Lines,
+        vehicleNumber: point.VehicleNumber,
+        time: point.Time,
+        startTime: point.StartTime ?? "",
+        tripId: index,
+      },
+    };
+  });
+}
 
 function reduceData(data: WarsawDataPoint[]): WarsawDataPoint[] {
   const results: WarsawDataPoint[] = [];
@@ -39,7 +69,7 @@ function reduceData(data: WarsawDataPoint[]): WarsawDataPoint[] {
 
 function createSplitPoints(
   data: WarsawDataPoint[],
-  criteria: filterCriteria,
+  criteria: FilterCriteria,
 ): number[] {
   const results = [];
   const locations = data.map((point, index) => {
@@ -80,6 +110,20 @@ function createSplitPoints(
         results.push(i);
         i += 10;
       }
+    }
+  }
+  return results;
+}
+
+function splitData(
+  data: WarsawDataPoint[],
+  splitPoints: number[],
+): WarsawDataPoint[][] {
+  const results: WarsawDataPoint[][] = [];
+  for (let i = 0; i < splitPoints.length; i++) {
+    results.push(data.slice(splitPoints[i], splitPoints[i + 1]));
+    for (let j = splitPoints[i]; j < splitPoints[i + 1]; j++) {
+      results[i][j].StartTime = data[i].Time;
     }
   }
   return results;
