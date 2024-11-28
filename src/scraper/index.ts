@@ -1,10 +1,30 @@
 import * as GJS from "./GeoJSON.ts";
-import * as APIHelper from "./APIHelper.ts";
+import * as APIHelper from "./warsaw/APIHelper.ts";
+import * as warsaw from "./warsaw/WarsawConverter.ts";
 import "jsr:@std/dotenv/load";
 import { cron } from "https://deno.land/x/deno_cron@v1.0.0/cron.ts";
 
 let executing: boolean = true;
-let dataMap: Map<string, GJS.GeoJSON[]> = new Map<string, GJS.GeoJSON[]>();
+
+type line = {
+  array: warsaw.WarsawDataPoint[];
+  filteredArray: warsaw.WarsawDataPoint[];
+  busMap: Map<string, warsaw.WarsawDataPoint[]>;
+  rideMap: Map<string, GJS.GeoJSON[]>;
+};
+
+const warsawLines = {
+  116: {
+    //raw data from the API
+    array: [] as warsaw.WarsawDataPoint[],
+    //data from the API with duplicates removed and split into rides
+    filteredArray: [] as warsaw.WarsawDataPoint[],
+    //data grouped by vehicle number
+    busMap: new Map<string, warsaw.WarsawDataPoint[]>(),
+    //data converted to GeoJSON, grouped by rideId
+    rideMap: new Map<string, GJS.GeoJSON[]>(),
+  } as line,
+};
 let today: string = new Date().toISOString().split("T")[0];
 let lastSave: string;
 // deno-lint-ignore no-explicit-any
@@ -28,26 +48,37 @@ Last data save: ${lastSave}
 Errors caught: ${errors}
 Current executing status: ${executing}`;
 
-async function getData(
-  dataMap: Map<string, GJS.GeoJSON[]>,
-): Promise<Map<string, GJS.GeoJSON[]>> {
-  const URI = APIHelper.buildConnectionString(
-    "20f2e5503e-927d-4ad3-9500-4ab9e55deb59",
-    Deno.env.get("APIKEY") ?? "",
-    1,
-    116,
+function foo(line: line) {
+  line.busMap = Map.groupBy(line.array, (point) => point.VehicleNumber);
+  line.filteredArray.length = 0;
+  for (const item of line.busMap.values()) {
+    warsaw.truncateData(item, warsaw.criteria116).forEach((point) => {
+      line.filteredArray.push(point);
+    });
+  }
+  line.rideMap = Map.groupBy(
+    warsaw.convertToGeoJSON(line.filteredArray),
+    (point) => point.properties.tripId.toString(),
   );
-  const data: APIHelper.LocationDataPoint[] = await APIHelper.callAPI(URI);
-  const geoJSON: GJS.GeoJSON[] = GJS.convertToGeoJSON(data);
-  GJS.mapByVNumbers(geoJSON, dataMap);
-  return dataMap;
+  GJS.exportGeoJSON(line.rideMap, today, line.array[0].Lines)
+}
+
+function cleanup(line: line){
+  line.array.length = 0;
+  line.busMap.clear();
+  line.filteredArray.length = 0;
+  line.rideMap.clear
 }
 
 //Fetch data every 10 seconds
 cron("*/10 * * * * *", async () => {
   if (executing) {
     try {
-      dataMap = await getData(dataMap);
+      warsawLines[116].array = await APIHelper.getData(
+        1,
+        116,
+        warsawLines[116].array,
+      );
     } catch (e) {
       errors.push(e);
     }
@@ -66,7 +97,7 @@ cron("37 4 * * *", () => {
 //Save data every 30 minutes
 cron("*/30 * * * *", () => {
   if (executing === true) {
-    GJS.exportGeoJSON(dataMap, today);
+    foo(warsawLines[116]);
     const date = new Date();
     lastSave = date.toLocaleTimeString();
   }
@@ -75,8 +106,8 @@ cron("*/30 * * * *", () => {
 //Daily cleanup
 cron("30 0 * * *", () => {
   executing = false;
-  GJS.exportGeoJSON(dataMap, today);
-  dataMap.clear();
+  foo(warsawLines[116]);
+  cleanup(warsawLines[116])
   const writePath = Deno.env.get("DIRECTORY")
     ? `${Deno.env.get("DIRECTORY")}/${today}/errors.txt`
     : "./results";

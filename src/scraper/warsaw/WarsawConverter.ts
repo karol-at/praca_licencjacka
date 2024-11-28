@@ -12,7 +12,7 @@ export function truncateData(
 }
 
 //type for data points from Warsaw API
-type WarsawDataPoint = {
+export type WarsawDataPoint = {
   Lines: string;
   Lon: number;
   Lat: number;
