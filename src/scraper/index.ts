@@ -3,28 +3,9 @@ import * as APIHelper from "./warsaw/APIHelper.ts";
 import * as warsaw from "./warsaw/WarsawConverter.ts";
 import "jsr:@std/dotenv/load";
 import { cron } from "https://deno.land/x/deno_cron@v1.0.0/cron.ts";
+import { warsawLines, type line } from "./lines.ts";
 
 let executing: boolean = true;
-
-type line = {
-  array: warsaw.WarsawDataPoint[];
-  filteredArray: warsaw.WarsawDataPoint[];
-  busMap: Map<string, warsaw.WarsawDataPoint[]>;
-  rideMap: Map<string, GJS.GeoJSON[]>;
-};
-
-const warsawLines = {
-  116: {
-    //raw data from the API
-    array: [] as warsaw.WarsawDataPoint[],
-    //data from the API with duplicates removed and split into rides
-    filteredArray: [] as warsaw.WarsawDataPoint[],
-    //data grouped by vehicle number
-    busMap: new Map<string, warsaw.WarsawDataPoint[]>(),
-    //data converted to GeoJSON, grouped by rideId
-    rideMap: new Map<string, GJS.GeoJSON[]>(),
-  } as line,
-};
 let today: string = new Date().toISOString().split("T")[0];
 let lastSave: string;
 // deno-lint-ignore no-explicit-any
