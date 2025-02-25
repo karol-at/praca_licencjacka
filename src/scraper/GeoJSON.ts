@@ -22,8 +22,11 @@ export type GeoJSON = {
   };
 };
 
-
-export function exportGeoJSON(dataMap: Map<string, GeoJSON[]>, today: string, lineId: string) {
+export function exportGeoJSON(
+  dataMap: Map<string | number, GeoJSON[]>,
+  today: string,
+  lineId: string,
+) {
   const directory = Deno.env.get("DIRECTORY") ?? "./results";
   const targetDirectory = `${directory}/${today}/`;
   Deno.mkdirSync(targetDirectory, { recursive: true });
@@ -32,6 +35,9 @@ export function exportGeoJSON(dataMap: Map<string, GeoJSON[]>, today: string, li
       type: "FeatureCollection",
       features: value,
     });
-    await Deno.writeTextFile(`${directory}/${today}/${lineId}/autobus_${key}.json`, geoJSON);
+    await Deno.writeTextFile(
+      `${directory}/${today}/${lineId}/autobus_${key}.json`,
+      geoJSON,
+    );
   });
 }
