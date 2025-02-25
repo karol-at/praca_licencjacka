@@ -1,10 +1,18 @@
 import * as warsaw from './warsaw/WarsawConverter.ts';
 import * as GJS from './GeoJSON.ts'
+import * as tricity from './tricity/TricityConverter.ts'
 
-export type line = {
+export type warsawLine = {
   array: warsaw.WarsawDataPoint[];
   filteredArray: warsaw.WarsawDataPoint[];
   busMap: Map<string, warsaw.WarsawDataPoint[]>;
+  rideMap: Map<string, GJS.GeoJSON[]>;
+};
+
+export type tricityLine = {
+  array: tricity.TricityDataPoint[];
+  filteredArray: tricity.TricityDataPoint[];
+  busMap: Map<string, tricity.TricityDataPoint[]>;
   rideMap: Map<string, GJS.GeoJSON[]>;
 };
 
@@ -18,5 +26,14 @@ export const warsawLines = {
     busMap: new Map<string, warsaw.WarsawDataPoint[]>(),
     //data converted to GeoJSON, grouped by rideId
     rideMap: new Map<string, GJS.GeoJSON[]>(),
-  } as line,
+  } as warsawLine,
 };
+
+export const tricityLines = {
+    106: {
+        array: [] as tricity.TricityDataPoint[],
+        filteredArray : [] as tricity.TricityDataPoint[],
+        busMap: new Map<string, tricity.TricityDataPoint[]>(),
+        rideMap: new Map<string, GJS.GeoJSON[]>(),
+    } as tricityLine
+}
