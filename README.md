@@ -1,9 +1,19 @@
 # Monorepo conataining a set of scripts used to write my bachelor's in geography
 
-## scraper_warsaw
+## scraper
 
-this directory contains a script for downloading current bus location data for a
-selected line of Warsaw public transport
+this directory contains a script for downloading current bus location data for
+specified lines of bus public transport
+
+### warsaw
+
+the scraper for the city of Warsaw, requires an API key, collective location
+data is split based on cutting data with the turf.js library on start and end
+points of the journey. turf.js polygons need to be provided in Polygons.ts
+
+### tricity
+
+the scraper for the city fo Gdańsk using
 
 to run the project install [Deno](deno.land), then create a .env file in the
 project directory and enter your API key and directory you want to save the data
