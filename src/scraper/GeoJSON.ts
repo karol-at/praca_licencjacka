@@ -28,15 +28,19 @@ export function exportGeoJSON(
   lineId: string,
 ) {
   const directory = Deno.env.get("DIRECTORY") ?? "./results";
-  const targetDirectory = `${directory}/${today}/`;
-  Deno.mkdirSync(targetDirectory, { recursive: true });
+  const targetDirectory = `${directory}/${today}/${lineId}`;
+  try {
+    Deno.mkdirSync(targetDirectory, { recursive: true });
+  } catch {
+    //reached if directory already exists, in that case do nothing
+  }
   dataMap.forEach(async (value, key) => {
     const geoJSON = JSON.stringify({
       type: "FeatureCollection",
       features: value,
     });
     await Deno.writeTextFile(
-      `${directory}/${today}/${lineId}/autobus_${key}.json`,
+      `${targetDirectory}/autobus_${key}.json`,
       geoJSON,
     );
   });
