@@ -36,8 +36,8 @@ export const tricityLines = {
   } as tricityLine,
 };
 
-export function tricityCleanup (line: tricityLine) {
-  line.array.length = 0
-  line.rideMap.clear()
-  line.sortedMap.clear()
+export function tricityCleanup(line: tricityLine) {
+  line.array.length = 0;
+  line.rideMap.clear();
+  line.sortedMap.clear();
 }

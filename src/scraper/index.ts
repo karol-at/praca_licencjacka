@@ -102,8 +102,13 @@ cron("*/30 * * * *", () => {
 cron("30 0 * * *", () => {
   executing = false;
   transformBusInfo(lines.warsawLines[116]);
-  TricityConverter.transformBusInfo(lines.tricityLines[106], tricityRes, 106, today)
-  lines.tricityCleanup(lines.tricityLines[106])
+  TricityConverter.transformBusInfo(
+    lines.tricityLines[106],
+    tricityRes,
+    106,
+    today,
+  );
+  lines.tricityCleanup(lines.tricityLines[106]);
   cleanup(lines.warsawLines[116]);
   const writePath = Deno.env.get("DIRECTORY")
     ? `${Deno.env.get("DIRECTORY")}/${today}/errors.txt`
