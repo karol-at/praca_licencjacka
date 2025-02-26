@@ -35,3 +35,9 @@ export const tricityLines = {
     rideMap: new Map<string, GJS.GeoJSON[]>(),
   } as tricityLine,
 };
+
+export function tricityCleanup (line: tricityLine) {
+  line.array.length = 0
+  line.rideMap.clear()
+  line.sortedMap.clear()
+}

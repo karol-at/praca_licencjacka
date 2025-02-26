@@ -4,7 +4,7 @@ import * as tricityAPI from "./tricity/APIHelper.ts";
 import * as warsaw from "./warsaw/WarsawConverter.ts";
 import "jsr:@std/dotenv/load";
 import { cron } from "https://deno.land/x/deno_cron@v1.0.0/cron.ts";
-import { tricityLines, type warsawLine, warsawLines } from "./lines.ts";
+import * as lines from "./lines.ts";
 import * as TricityConverter from "./tricity/TricityConverter.ts";
 
 let executing: boolean = true;
@@ -32,7 +32,7 @@ Last data save: ${lastSave}
 Errors caught: ${errors}
 Current executing status: ${executing}`;
 
-function transformBusInfo(line: warsawLine) {
+function transformBusInfo(line: lines.warsawLine) {
   line.busMap = Map.groupBy(line.array, (point) => point.VehicleNumber);
   line.filteredArray.length = 0;
   for (const item of line.busMap.values()) {
@@ -47,7 +47,7 @@ function transformBusInfo(line: warsawLine) {
   GJS.exportGeoJSON(line.rideMap, today, line.array[0].Lines);
 }
 
-function cleanup(line: warsawLine) {
+function cleanup(line: lines.warsawLine) {
   line.array.length = 0;
   line.busMap.clear();
   line.filteredArray.length = 0;
@@ -58,10 +58,10 @@ function cleanup(line: warsawLine) {
 cron("*/10 * * * * *", async () => {
   if (executing) {
     try {
-      warsawLines[116].array = await warsawAPI.getData(
+      lines.warsawLines[116].array = await warsawAPI.getData(
         1,
         116,
-        warsawLines[116].array,
+        lines.warsawLines[116].array,
       );
     } catch (e) {
       errors.push(e);
@@ -86,9 +86,9 @@ cron("37 4 * * *", () => {
 //Save data every 30 minutes
 cron("*/30 * * * *", () => {
   if (executing === true) {
-    transformBusInfo(warsawLines[116]);
+    transformBusInfo(lines.warsawLines[116]);
     TricityConverter.transformBusInfo(
-      tricityLines[106],
+      lines.tricityLines[106],
       tricityRes,
       106,
       today,
@@ -101,8 +101,10 @@ cron("*/30 * * * *", () => {
 //Daily cleanup
 cron("30 0 * * *", () => {
   executing = false;
-  transformBusInfo(warsawLines[116]);
-  cleanup(warsawLines[116]);
+  transformBusInfo(lines.warsawLines[116]);
+  TricityConverter.transformBusInfo(lines.tricityLines[106], tricityRes, 106, today)
+  lines.tricityCleanup(lines.tricityLines[106])
+  cleanup(lines.warsawLines[116]);
   const writePath = Deno.env.get("DIRECTORY")
     ? `${Deno.env.get("DIRECTORY")}/${today}/errors.txt`
     : "./results";
