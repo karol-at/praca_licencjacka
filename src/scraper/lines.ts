@@ -41,3 +41,10 @@ export function tricityCleanup(line: tricityLine) {
   line.rideMap.clear();
   line.sortedMap.clear();
 }
+
+export function warsawCleanup(line: warsawLine) {
+  line.array.length = 0;
+  line.busMap.clear();
+  line.filteredArray.length = 0;
+  line.rideMap.clear;
+}
