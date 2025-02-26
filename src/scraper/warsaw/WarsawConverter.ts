@@ -73,6 +73,11 @@ function createSplitPoints(
 ): number[] {
   const results = [];
   const locations = data.map((point, index) => {
+    if (data[index + 1] === undefined) return {
+      Lon: point.Lon,
+      Lat: point.Lat,
+      angle: 0
+    }
     return {
       Lon: point.Lon,
       Lat: point.Lat,
