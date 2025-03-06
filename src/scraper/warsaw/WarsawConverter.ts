@@ -1,7 +1,6 @@
 import { exportGeoJSON, GeoJSON } from "../GeoJSON.ts";
 import { booleanPointInPolygon, point } from "npm:@turf/turf";
 import { polygons } from "./Polygons.ts";
-import { today } from "../index.ts";
 
 export function truncateData(
   data: WarsawDataPoint[],
@@ -38,7 +37,7 @@ export const criteria116: FilterCriteria = {
   angles: [[-45, -135], [180, 90]],
 };
 
-export function transformBusInfo(array: WarsawDataPoint[]) {
+export function transformBusInfo(array: WarsawDataPoint[], today: string) {
   const busMap = Map.groupBy(array, (point) => point.VehicleNumber);
   const filteredArray: WarsawDataPoint[] = [];
   for (const item of busMap.values()) {
