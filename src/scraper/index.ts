@@ -5,7 +5,7 @@ import { cron } from "https://deno.land/x/deno_cron@v1.0.0/cron.ts";
 import * as lines from "./lines.ts";
 import * as TricityConverter from "./tricity/TricityConverter.ts";
 import * as Warsaw from "./warsaw/WarsawConverter.ts";
-import * as db from "./database.ts";
+import * as database from "./database.ts";
 
 let executing: boolean = true;
 export let today: string = new Date().toISOString().split("T")[0];
@@ -39,9 +39,9 @@ cron("*/10 * * * * *", async () => {
   if (!executing) return;
   try {
     const array = await warsawAPI.getData(1, 116);
-    const query = array.map((item) => db.createInsertQuery(item, "warsawData"))
+    const query = array.map((item) => database.createInsertQuery(item, "warsawData"))
       .flat()[0];
-    db.execQuery(query);
+    database.execQuery(query);
   } catch (e) {
     errors.push(e);
   }
@@ -56,14 +56,14 @@ cron("*/10 * * * * *", async () => {
 cron("37 4 * * *", () => {
   const date = new Date();
   today = `${date.toISOString().split("T")[0]}`;
-  db.createTables();
+  database.createTables();
   executing = true;
 });
 
 //Save data every 30 minutes
 cron("*/30 * * * *", () => {
   if (!executing) return;
-  let array: Warsaw.WarsawDataPoint[] = db.getWarsawBuses(116);
+  let array: Warsaw.WarsawDataPoint[] = database.getWarsawBuses(116);
   Warsaw.transformBusInfo(array);
   TricityConverter.transformBusInfo(
     lines.tricityLines[106],
@@ -78,7 +78,8 @@ cron("*/30 * * * *", () => {
 //Daily cleanup
 cron("30 0 * * *", () => {
   executing = false;
-  let array: Warsaw.WarsawDataPoint[] = db.getWarsawBuses(116);
+  let array: Warsaw.WarsawDataPoint[] = database.getWarsawBuses(116);
+  Warsaw.transformBusInfo(array)
   TricityConverter.transformBusInfo(
     lines.tricityLines[106],
     tricityRes,
@@ -86,7 +87,7 @@ cron("30 0 * * *", () => {
     today,
   );
   lines.tricityCleanup(lines.tricityLines[106]);
-  db.dropTables();
+  database.dropTables();
   const writePath = Deno.env.get("DIRECTORY")
     ? `${Deno.env.get("DIRECTORY")}/${today}/errors.txt`
     : "./results";
