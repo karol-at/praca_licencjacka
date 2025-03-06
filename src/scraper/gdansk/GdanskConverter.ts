@@ -1,4 +1,3 @@
-import { gdanskLine } from "../lines.ts";
 import { exportGeoJSON, GeoJSON } from "../GeoJSON.ts";
 
 export type GdanskDataPoint = {

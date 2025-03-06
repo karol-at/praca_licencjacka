@@ -1,7 +1,6 @@
 import "jsr:@std/dotenv/load";
 import { cron } from "https://deno.land/x/deno_cron@v1.0.0/cron.ts";
 import * as database from "./database.ts";
-import * as lines from "./lines.ts";
 import * as gdanskConverter from "./gdansk/GdanskConverter.ts";
 import * as WarsawConverter from "./warsaw/WarsawConverter.ts";
 
