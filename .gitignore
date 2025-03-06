@@ -1,6 +1,6 @@
 .idea
 .vscode
 node_modules
-*.txt
+.venv
 .env
 *.db
