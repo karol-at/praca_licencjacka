@@ -2,7 +2,17 @@ import { DatabaseSync } from "node:sqlite";
 import { WarsawDataPoint } from "./warsaw/WarsawConverter.ts";
 import { TricityDataPoint } from "./tricity/TricityConverter.ts";
 
-const db = new DatabaseSync("base.db");
+const db: DatabaseSync = new DatabaseSync("base.db");
+
+interface LineNames {
+  warsawData: string,
+  gdanskData: string
+}
+
+const lineNames = {
+  'warsawData': 'Lines',
+  'gdanskData': 'routeId'
+}
 
 export const createTables = (): void =>
   db.exec(
@@ -47,7 +57,7 @@ export const dropTables = (): void =>
 
 export function createInsertQuery(
   item: WarsawDataPoint | TricityDataPoint,
-  table: string,
+  table: keyof LineNames,
 ): string {
   let query: string = `INSERT INTO ${table} (\n`;
   Object.keys(item).forEach(
@@ -63,3 +73,10 @@ export function createInsertQuery(
 }
 
 export const execQuery = (query: string) => db.exec(query);
+
+export const getBuses = (dbName: keyof LineNames, line: number): WarsawDataPoint[] | TricityDataPoint[] => db.prepare(
+  `
+  SELECT * FROM ${dbName}
+  WHERE ${lineNames[dbName]} = ${line};
+  `
+).all()
