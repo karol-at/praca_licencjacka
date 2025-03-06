@@ -22,10 +22,9 @@ function buildConnectionString(
 
 export async function getData(
   type: 1 | 2,
-  line: number,
-  array: WarsawDataPoint[],
+  line: number
 ): Promise<WarsawDataPoint[]> {
   const URI = buildConnectionString(Deno.env.get("APIKEY") ?? "", type, line);
   const data = await callAPI(URI);
-  return array.concat(data);
+  return data
 }

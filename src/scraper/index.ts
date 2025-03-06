@@ -4,7 +4,8 @@ import "jsr:@std/dotenv/load";
 import { cron } from "https://deno.land/x/deno_cron@v1.0.0/cron.ts";
 import * as lines from "./lines.ts";
 import * as TricityConverter from "./tricity/TricityConverter.ts";
-import * as WarsawConverter from './warsaw/WarsawConverter.ts'
+import * as WarsawConverter from "./warsaw/WarsawConverter.ts";
+import * as db from "./database.ts";
 
 let executing: boolean = true;
 export let today: string = new Date().toISOString().split("T")[0];
@@ -31,16 +32,15 @@ Last data save: ${lastSave}
 Errors caught: ${errors}
 Current executing status: ${executing}`;
 
-
 //Fetch data every 10 seconds
 cron("*/10 * * * * *", async () => {
   if (executing) {
     try {
-      lines.warsawLines[116].array = await warsawAPI.getData(
-        1,
-        116,
-        lines.warsawLines[116].array,
-      );
+      const array = await warsawAPI.getData(1, 116);
+      array.forEach((item) => {
+        const query = db.createInsertQuery(item, "warsawData");
+        db.execQuery(query);
+      });
     } catch (e) {
       errors.push(e);
     }
