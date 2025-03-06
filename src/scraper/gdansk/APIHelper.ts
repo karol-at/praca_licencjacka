@@ -9,8 +9,8 @@ async function callAPI(): Promise<GdanskDataPoint[]> {
 }
 
 export async function getData(
-  array: GdanskDataPoint[],
+  lines: number[],
 ): Promise<GdanskDataPoint[]> {
   const data = await callAPI();
-  return array.concat(data);
+  return data.filter(item => lines.includes(item.routeId))
 }
