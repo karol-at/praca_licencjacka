@@ -1,16 +1,14 @@
 import "jsr:@std/dotenv/load";
 import { cron } from "https://deno.land/x/deno_cron@v1.0.0/cron.ts";
-import * as lines from "./lines.ts";
 import * as TricityConverter from "./tricity/TricityConverter.ts";
 import * as Warsaw from "./warsaw/WarsawConverter.ts";
 import * as database from "./database.ts";
 
 let executing: boolean = true;
-export let today: string = new Date().toISOString().split("T")[0];
+let today: string = new Date().toISOString().split("T")[0];
 let lastSave: string;
 // deno-lint-ignore no-explicit-any
 const errors: any[] = [];
-let tricityRes: TricityConverter.TricityDataPoint[] = [];
 if (Deno.env.get("APIKEY") === undefined) {
   throw new Error("APIKEY is not set");
 }
@@ -31,7 +29,7 @@ Errors caught: ${errors}
 Current executing status: ${executing}`;
 
 //Fetch data every 10 seconds
-cron("*/10 * * * * *", async () => {
+cron("*/10 * * * * *", () => {
   console.clear();
   console.log(progressString(new Date(), lastSave, errors.length, executing));
   if (!executing) return;
@@ -58,12 +56,13 @@ cron("37 4 * * *", () => {
 //Save data every 30 minutes
 cron("*/30 * * * *", () => {
   if (!executing) return;
-  let array: Warsaw.WarsawDataPoint[] = database.getWarsawBuses(116);
-  Warsaw.transformBusInfo(array);
+  
+  Warsaw.transformBusInfo(
+    database.getWarsawBuses(116),
+    today
+);
   TricityConverter.transformBusInfo(
-    lines.tricityLines[106],
-    tricityRes,
-    106,
+    database.getGdanskBuses(106),
     today,
   );
   const date = new Date();
@@ -73,15 +72,14 @@ cron("*/30 * * * *", () => {
 //Daily cleanup
 cron("30 0 * * *", () => {
   executing = false;
-  let array: Warsaw.WarsawDataPoint[] = database.getWarsawBuses(116);
-  Warsaw.transformBusInfo(array);
+  Warsaw.transformBusInfo(
+    database.getWarsawBuses(116), 
+    today
+  );
   TricityConverter.transformBusInfo(
-    lines.tricityLines[106],
-    tricityRes,
-    106,
+    database.getGdanskBuses(106),
     today,
   );
-  lines.tricityCleanup(lines.tricityLines[106]);
   database.dropTables();
   const writePath = Deno.env.get("DIRECTORY")
     ? `${Deno.env.get("DIRECTORY")}/${today}/errors.txt`

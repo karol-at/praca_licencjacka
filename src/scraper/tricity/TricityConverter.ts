@@ -1,4 +1,3 @@
-import { tricityLine } from "../lines.ts";
 import { exportGeoJSON, GeoJSON } from "../GeoJSON.ts";
 
 export type TricityDataPoint = {
@@ -39,31 +38,26 @@ function convertToGeoJSON(data: TricityDataPoint[]): GeoJSON[] {
   });
 }
 
-const getLine = (data: TricityDataPoint[], index: number): TricityDataPoint[] =>
-  Map.groupBy(data, (item) => item.routeId).get(index) ?? [];
-
 export function transformBusInfo(
-  line: tricityLine,
-  data: TricityDataPoint[],
-  index: number,
+  array: TricityDataPoint[],
   today: string,
 ): void {
-  line.array = getLine(data, index);
-  line.rideMap = Map.groupBy(
-    convertToGeoJSON(line.array),
+  const rideMap = Map.groupBy(
+    convertToGeoJSON(array),
     (item) => item.properties.startTime,
   );
-  for (const [time, ride] of line.rideMap) {
-    line.rideMap.set(time, reduceData(ride));
+  for (const [time, ride] of rideMap) {
+    rideMap.set(time, reduceData(ride));
   }
-  const sorted: GeoJSON[][] = line.rideMap.values().toArray().sort((a, b) =>
+  const sorted: GeoJSON[][] = rideMap.values().toArray().sort((a, b) =>
     new Date(a[0].properties.startTime).getTime() -
     new Date(b[0].properties.startTime).getTime()
   );
+  const sortedMap = new Map<number, GeoJSON[]>();
   for (let i = 0; i < sorted.length; i++) {
-    line.sortedMap.set(i, sorted[i]);
+    sortedMap.set(i, sorted[i]);
   }
-  exportGeoJSON(line.sortedMap, today, index.toString());
+  exportGeoJSON(sortedMap, today, array[0].routeId.toString());
 }
 
 function reduceData(data: GeoJSON[]): GeoJSON[] {
