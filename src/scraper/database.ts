@@ -4,7 +4,7 @@ import { TricityDataPoint } from "./tricity/TricityConverter.ts";
 
 const db = new DatabaseSync("base.db");
 
-const createTables = (): void =>
+export const createTables = (): void =>
   db.exec(
     `
       CREATE TABLE warsawData (
@@ -37,7 +37,7 @@ const createTables = (): void =>
     `,
   );
 
-const dropTables = (): void =>
+export const dropTables = (): void =>
   db.exec(
     `
       DROP TABLE warsawData;
@@ -45,7 +45,7 @@ const dropTables = (): void =>
     `,
   );
 
-function createInsertQuery(
+export function createInsertQuery(
   item: WarsawDataPoint | TricityDataPoint,
   table: string,
 ): string {
@@ -62,4 +62,4 @@ function createInsertQuery(
   return query;
 }
 
-const execQuery = (query: string) => db.exec(query);
+export const execQuery = (query: string) => db.exec(query);
