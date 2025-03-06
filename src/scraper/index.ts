@@ -34,24 +34,23 @@ Current executing status: ${executing}`;
 
 //Fetch data every 10 seconds
 cron("*/10 * * * * *", async () => {
-  if (executing) {
-    try {
-      const array = await warsawAPI.getData(1, 116);
-      array.forEach((item) => {
-        const query = db.createInsertQuery(item, "warsawData");
-        db.execQuery(query);
-      });
-    } catch (e) {
-      errors.push(e);
-    }
+  console.clear();
+  console.log(progressString(new Date(), lastSave, errors.length, executing));
+  if (!executing) return;
+  try {
+    const array = await warsawAPI.getData(1, 116);
+    array.forEach((item) => {
+      const query = db.createInsertQuery(item, "warsawData");
+      db.execQuery(query);
+    });
+  } catch (e) {
+    errors.push(e);
   }
   try {
     tricityRes = await tricityAPI.getData(tricityRes);
   } catch (e) {
     errors.push(e);
   }
-  console.clear();
-  console.log(progressString(new Date(), lastSave, errors.length, executing));
 });
 
 //Start data fetching
