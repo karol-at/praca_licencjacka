@@ -9,8 +9,8 @@ async function callAPI(): Promise<TricityDataPoint[]> {
 }
 
 export async function getData(
-  array: TricityDataPoint[],
+  lines: number[]
 ): Promise<TricityDataPoint[]> {
   const data = await callAPI();
-  return array.concat(data);
+  return data.filter(item => lines.includes(item.routeId))
 }

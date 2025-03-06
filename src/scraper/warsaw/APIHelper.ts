@@ -15,16 +15,15 @@ async function callAPI(URI: string): Promise<WarsawDataPoint[]> {
 function buildConnectionString(
   key: string,
   type: 1 | 2,
-  line: number,
 ): string {
-  return `https://api.um.warszawa.pl/api/action/busestrams_get/?resource_id=${resource_id}&apikey=${key}&type=${type}&line=${line}`;
+  return `https://api.um.warszawa.pl/api/action/busestrams_get/?resource_id=${resource_id}&apikey=${key}&type=${type}`;
 }
 
 export async function getData(
   type: 1 | 2,
-  line: number
+  lines: number[],
 ): Promise<WarsawDataPoint[]> {
-  const URI = buildConnectionString(Deno.env.get("APIKEY") ?? "", type, line);
+  const URI = buildConnectionString(Deno.env.get("APIKEY") ?? "", type);
   const data = await callAPI(URI);
-  return data
+  return data.filter((item) => lines.includes(Number(item.Lines)));
 }

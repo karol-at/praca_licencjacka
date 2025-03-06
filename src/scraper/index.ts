@@ -1,5 +1,3 @@
-import * as warsawAPI from "./warsaw/APIHelper.ts";
-import * as tricityAPI from "./tricity/APIHelper.ts";
 import "jsr:@std/dotenv/load";
 import { cron } from "https://deno.land/x/deno_cron@v1.0.0/cron.ts";
 import * as lines from "./lines.ts";
@@ -38,15 +36,12 @@ cron("*/10 * * * * *", async () => {
   console.log(progressString(new Date(), lastSave, errors.length, executing));
   if (!executing) return;
   try {
-    const array = await warsawAPI.getData(1, 116);
-    const query = array.map((item) => database.createInsertQuery(item, "warsawData"))
-      .flat()[0];
-    database.execQuery(query);
+    database.fetchData("warsawData", [116]);
   } catch (e) {
     errors.push(e);
   }
   try {
-    tricityRes = await tricityAPI.getData(tricityRes);
+    database.fetchData("gdanskData", [106]);
   } catch (e) {
     errors.push(e);
   }
@@ -79,7 +74,7 @@ cron("*/30 * * * *", () => {
 cron("30 0 * * *", () => {
   executing = false;
   let array: Warsaw.WarsawDataPoint[] = database.getWarsawBuses(116);
-  Warsaw.transformBusInfo(array)
+  Warsaw.transformBusInfo(array);
   TricityConverter.transformBusInfo(
     lines.tricityLines[106],
     tricityRes,
