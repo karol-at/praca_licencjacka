@@ -1,6 +1,6 @@
 import * as warsaw from "./warsaw/WarsawConverter.ts";
 import * as GJS from "./GeoJSON.ts";
-import * as tricity from "./tricity/TricityConverter.ts";
+import * as gdansk from "./gdansk/GdanskConverter.ts";
 
 export type warsawLine = {
   array: warsaw.WarsawDataPoint[];
@@ -9,8 +9,8 @@ export type warsawLine = {
   rideMap: Map<string, GJS.GeoJSON[]>;
 };
 
-export type tricityLine = {
-  array: tricity.TricityDataPoint[];
+export type gdanskLine = {
+  array: gdansk.GdanskDataPoint[];
   sortedMap: Map<number, GJS.GeoJSON[]>;
   rideMap: Map<string, GJS.GeoJSON[]>;
 };
@@ -28,15 +28,15 @@ export const warsawLines = {
   } as warsawLine,
 };
 
-export const tricityLines = {
+export const gdanskLines = {
   106: {
-    array: [] as tricity.TricityDataPoint[],
+    array: [] as gdansk.GdanskDataPoint[],
     sortedMap: new Map<number, GJS.GeoJSON[]>(),
     rideMap: new Map<string, GJS.GeoJSON[]>(),
-  } as tricityLine,
+  } as gdanskLine,
 };
 
-export function tricityCleanup(line: tricityLine) {
+export function gdanskCleanup(line: gdanskLine) {
   line.array.length = 0;
   line.rideMap.clear();
   line.sortedMap.clear();

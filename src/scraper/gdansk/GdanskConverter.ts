@@ -1,7 +1,7 @@
-import { tricityLine } from "../lines.ts";
+import { gdanskLine } from "../lines.ts";
 import { exportGeoJSON, GeoJSON } from "../GeoJSON.ts";
 
-export type TricityDataPoint = {
+export type GdanskDataPoint = {
   generated: string;
   routeShortName: string;
   tripId: number;
@@ -19,7 +19,7 @@ export type TricityDataPoint = {
   gpsQuality: number;
 };
 
-function convertToGeoJSON(data: TricityDataPoint[]): GeoJSON[] {
+function convertToGeoJSON(data: GdanskDataPoint[]): GeoJSON[] {
   return data.map((point) => {
     return {
       type: "Feature",
@@ -39,12 +39,12 @@ function convertToGeoJSON(data: TricityDataPoint[]): GeoJSON[] {
   });
 }
 
-const getLine = (data: TricityDataPoint[], index: number): TricityDataPoint[] =>
+const getLine = (data: GdanskDataPoint[], index: number): GdanskDataPoint[] =>
   Map.groupBy(data, (item) => item.routeId).get(index) ?? [];
 
 export function transformBusInfo(
-  line: tricityLine,
-  data: TricityDataPoint[],
+  line: gdanskLine,
+  data: GdanskDataPoint[],
   index: number,
   today: string,
 ): void {
