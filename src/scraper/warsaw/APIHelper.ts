@@ -3,7 +3,7 @@ import "jsr:@std/dotenv/load";
 
 const resource_id = "20f2e5503e-927d-4ad3-9500-4ab9e55deb59";
 
-export async function callAPI(URI: string): Promise<WarsawDataPoint[]> {
+async function callAPI(URI: string): Promise<WarsawDataPoint[]> {
   const res: Response = await fetch(URI);
   const data = await res.json();
   if (typeof (data.result) === "string") {
@@ -12,7 +12,7 @@ export async function callAPI(URI: string): Promise<WarsawDataPoint[]> {
   return data.result;
 }
 
-export function buildConnectionString(
+function buildConnectionString(
   key: string,
   type: 1 | 2,
   line: number,
