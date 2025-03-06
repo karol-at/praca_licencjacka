@@ -84,6 +84,14 @@ export const getWarsawBuses = (line: number): WarsawDataPoint[] =>
   `,
   ).all();
 
+export const getGdanskBuses = (line: number): TricityDataPoint[] =>
+  db.prepare(
+    `
+    SELECT * FROM gdanskData
+    WHERE Lines = ${line}
+    `,
+  );
+
 export async function fetchData(
   database: keyof LineNames,
   lines: number[],
