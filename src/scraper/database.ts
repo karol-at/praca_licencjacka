@@ -1,5 +1,6 @@
 import { DatabaseSync } from "node:sqlite";
 import { WarsawDataPoint } from "./warsaw/WarsawConverter.ts";
+import { TricityDataPoint } from "./tricity/TricityConverter.ts";
 
 const db = new DatabaseSync("base.db");
 
@@ -8,16 +9,17 @@ const createTables = (): void =>
     `
       CREATE TABLE warsawData (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        latitude REAL,
-        longitude REAL,
-        time TEXT,
-        brigade INTEGER,
-        vehicleNumber INTEGER
+        Lines INTEGER,
+        Lat REAL,
+        Lon REAL,
+        Time TEXT,
+        Brigade INTEGER,
+        VehicleNumber INTEGER
       );
       CREATE TABLE gdanskData (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        latitude REAL,
-        longitude REAL,
+        lat REAL,
+        lon REAL,
         generated TEXT,
         routeShortName TEXT,
         tripId INTEGER,
@@ -42,3 +44,22 @@ const dropTables = (): void =>
       DROP TABLE gdanskData
     `,
   );
+
+function createInsertQuery(
+  item: WarsawDataPoint | TricityDataPoint,
+  table: string,
+): string {
+  let query: string = `INSERT INTO ${table} (\n`;
+  Object.keys(item).forEach(
+    (key) => query += `${key},\n`,
+  );
+  query = query.slice(0, -2) + "\n)\n";
+  query += "VALUES (\n";
+  Object.values(item).forEach(
+    (value) => query += `'${value}',\n`,
+  );
+  query = query.slice(0, -2) + "\n);";
+  return query;
+}
+
+const execQuery = (query: string) => db.exec(query);
