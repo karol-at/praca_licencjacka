@@ -1,14 +1,18 @@
 import { DatabaseSync } from "node:sqlite";
 import { WarsawDataPoint } from "./warsaw/WarsawConverter.ts";
 import { TricityDataPoint } from "./tricity/TricityConverter.ts";
+import 'jsr:@std/dotenv/load'
 
-const db: DatabaseSync = new DatabaseSync("base.db");
+const path = Deno.env.get('DATABASE')
+
+if (path === undefined) { throw new Deno.errors.InvalidData()}
+
+const db: DatabaseSync = new DatabaseSync(path);
 
 interface LineNames {
-  warsawData: string,
-  gdanskData: string
+  warsawData: string;
+  gdanskData: string;
 }
-
 
 export const createTables = (): void =>
   db.exec(
@@ -70,9 +74,10 @@ export function createInsertQuery(
 
 export const execQuery = (query: string) => db.exec(query);
 
-export const getWarsawBuses = (line: number): WarsawDataPoint[] => db.prepare(
-  `
+export const getWarsawBuses = (line: number): WarsawDataPoint[] =>
+  db.prepare(
+    `
   SELECT * FROM warsawData
   WHERE Lines = ${line};
-  `
-).all()
+  `,
+  ).all();
