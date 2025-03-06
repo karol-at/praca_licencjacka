@@ -9,10 +9,6 @@ interface LineNames {
   gdanskData: string
 }
 
-const lineNames = {
-  'warsawData': 'Lines',
-  'gdanskData': 'routeId'
-}
 
 export const createTables = (): void =>
   db.exec(
@@ -74,9 +70,9 @@ export function createInsertQuery(
 
 export const execQuery = (query: string) => db.exec(query);
 
-export const getBuses = (dbName: keyof LineNames, line: number): WarsawDataPoint[] | TricityDataPoint[] => db.prepare(
+export const getWarsawBuses = (line: number): WarsawDataPoint[] => db.prepare(
   `
-  SELECT * FROM ${dbName}
-  WHERE ${lineNames[dbName]} = ${line};
+  SELECT * FROM warsawData
+  WHERE Lines = ${line};
   `
 ).all()

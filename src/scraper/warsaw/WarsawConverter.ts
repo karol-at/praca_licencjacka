@@ -1,8 +1,7 @@
-import { GeoJSON, exportGeoJSON } from "../GeoJSON.ts";
+import { exportGeoJSON, GeoJSON } from "../GeoJSON.ts";
 import { booleanPointInPolygon, point } from "npm:@turf/turf";
 import { polygons } from "./Polygons.ts";
 import { today } from "../index.ts";
-import * as lines from '../lines.ts'
 
 export function truncateData(
   data: WarsawDataPoint[],
@@ -39,19 +38,19 @@ export const criteria116: FilterCriteria = {
   angles: [[-45, -135], [180, 90]],
 };
 
-export function transformBusInfo(line: lines.warsawLine) {
-  line.busMap = Map.groupBy(line.array, (point) => point.VehicleNumber);
-  line.filteredArray.length = 0;
-  for (const item of line.busMap.values()) {
+export function transformBusInfo(array: WarsawDataPoint[]) {
+  const busMap = Map.groupBy(array, (point) => point.VehicleNumber);
+  const filteredArray: WarsawDataPoint[] = [];
+  for (const item of busMap.values()) {
     truncateData(item, criteria116).forEach((point) => {
-      line.filteredArray.push(point);
+      filteredArray.push(point);
     });
   }
-  line.rideMap = Map.groupBy(
-    convertToGeoJSON(line.filteredArray),
-    (point) => point.properties.tripId.toString()
+  const rideMap = Map.groupBy(
+    convertToGeoJSON(filteredArray),
+    (point) => point.properties.tripId.toString(),
   );
-  exportGeoJSON(line.rideMap, today, line.array[0].Lines);
+  exportGeoJSON(rideMap, today, array[0].Lines);
 }
 
 export function convertToGeoJSON(data: WarsawDataPoint[]): GeoJSON[] {

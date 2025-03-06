@@ -4,7 +4,7 @@ import "jsr:@std/dotenv/load";
 import { cron } from "https://deno.land/x/deno_cron@v1.0.0/cron.ts";
 import * as lines from "./lines.ts";
 import * as TricityConverter from "./tricity/TricityConverter.ts";
-import * as WarsawConverter from "./warsaw/WarsawConverter.ts";
+import * as Warsaw from "./warsaw/WarsawConverter.ts";
 import * as db from "./database.ts";
 
 let executing: boolean = true;
@@ -39,10 +39,9 @@ cron("*/10 * * * * *", async () => {
   if (!executing) return;
   try {
     const array = await warsawAPI.getData(1, 116);
-    array.forEach((item) => {
-      const query = db.createInsertQuery(item, "warsawData");
-      db.execQuery(query);
-    });
+    const query = array.map((item) => db.createInsertQuery(item, "warsawData"))
+      .flat()[0];
+    db.execQuery(query);
   } catch (e) {
     errors.push(e);
   }
@@ -57,28 +56,29 @@ cron("*/10 * * * * *", async () => {
 cron("37 4 * * *", () => {
   const date = new Date();
   today = `${date.toISOString().split("T")[0]}`;
+  db.createTables();
   executing = true;
 });
 
 //Save data every 30 minutes
 cron("*/30 * * * *", () => {
-  if (executing === true) {
-    WarsawConverter.transformBusInfo(lines.warsawLines[116]);
-    TricityConverter.transformBusInfo(
-      lines.tricityLines[106],
-      tricityRes,
-      106,
-      today,
-    );
-    const date = new Date();
-    lastSave = date.toLocaleTimeString();
-  }
+  if (!executing) return;
+  let array: Warsaw.WarsawDataPoint[] = db.getWarsawBuses(116);
+  Warsaw.transformBusInfo(array);
+  TricityConverter.transformBusInfo(
+    lines.tricityLines[106],
+    tricityRes,
+    106,
+    today,
+  );
+  const date = new Date();
+  lastSave = date.toLocaleTimeString();
 });
 
 //Daily cleanup
 cron("30 0 * * *", () => {
   executing = false;
-  WarsawConverter.transformBusInfo(lines.warsawLines[116]);
+  let array: Warsaw.WarsawDataPoint[] = db.getWarsawBuses(116);
   TricityConverter.transformBusInfo(
     lines.tricityLines[106],
     tricityRes,
@@ -86,7 +86,7 @@ cron("30 0 * * *", () => {
     today,
   );
   lines.tricityCleanup(lines.tricityLines[106]);
-  lines.warsawCleanup(lines.warsawLines[116]);
+  db.dropTables();
   const writePath = Deno.env.get("DIRECTORY")
     ? `${Deno.env.get("DIRECTORY")}/${today}/errors.txt`
     : "./results";
