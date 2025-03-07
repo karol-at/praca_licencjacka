@@ -1,8 +1,8 @@
 import { DatabaseSync } from "node:sqlite";
 import { WarsawDataPoint } from "./warsaw/WarsawConverter.ts";
-import { TricityDataPoint } from "./tricity/TricityConverter.ts";
+import { GdanskDataPoint } from "./gdansk/GdanskConverter.ts";
 import * as WarsawAPI from "./warsaw/APIHelper.ts";
-import * as GdanskAPI from "./tricity/APIHelper.ts";
+import * as GdanskAPI from "./gdansk/APIHelper.ts";
 import "jsr:@std/dotenv/load";
 
 const path = Deno.env.get("DATABASE");
@@ -58,7 +58,7 @@ export const dropTables = (): void =>
   );
 
 function createInsertQuery(
-  item: WarsawDataPoint | TricityDataPoint,
+  item: WarsawDataPoint | GdanskDataPoint,
   table: keyof LineNames,
 ): string {
   let query: string = `INSERT INTO ${table} (\n`;
@@ -84,20 +84,20 @@ export const getWarsawBuses = (line: number): WarsawDataPoint[] =>
   `,
   ).all();
 
-export const getGdanskBuses = (line: number): TricityDataPoint[] =>
+export const getGdanskBuses = (line: number): GdanskDataPoint[] =>
   db.prepare(
     `
     SELECT * FROM gdanskData
     WHERE Lines = ${line}
     `,
-  );
+  ).all();
 
 export async function fetchData(
   database: keyof LineNames,
   lines: number[],
 ): Promise<void> {
   if (database === "gdanskData") {
-    const array: TricityDataPoint[] = await GdanskAPI.getData(lines);
+    const array: GdanskDataPoint[] = await GdanskAPI.getData(lines);
     const query = array.map((item) =>
       createInsertQuery(item, "gdanskData")
     ).flat()[0];
