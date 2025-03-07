@@ -29,17 +29,17 @@ Errors caught: ${errors}
 Current executing status: ${executing}`;
 
 //Fetch data every 10 seconds
-cron("*/10 * * * * *", () => {
+cron("*/10 * * * * *",async () => {
   console.clear();
   console.log(progressString(new Date(), lastSave, errors.length, executing));
   if (!executing) return;
   try {
-    database.fetchData("warsawData", [116]);
+    await database.fetchData("warsawData", [116]);
   } catch (e) {
     errors.push(e);
   }
   try {
-    database.fetchData("gdanskData", [106]);
+    await database.fetchData("gdanskData", [106]);
   } catch (e) {
     errors.push(e);
   }
