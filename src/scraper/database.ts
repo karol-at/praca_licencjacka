@@ -88,7 +88,7 @@ export const getGdanskBuses = (line: number): GdanskDataPoint[] =>
   db.prepare(
     `
     SELECT * FROM gdanskData
-    WHERE Lines = ${line}
+    WHERE routeId = ${line}
     `,
   ).all();
 
