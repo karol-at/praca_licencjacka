@@ -12,5 +12,5 @@ export async function getData(
   lines: number[],
 ): Promise<GdanskDataPoint[]> {
   const data = await callAPI();
-  return data.filter(item => lines.includes(item.routeId))
+  return data.filter(item => lines.includes(item.routeId) && item.tripId !== null)
 }
