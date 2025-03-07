@@ -61,7 +61,7 @@ export function transformBusInfo(
 }
 
 function reduceData(data: GeoJSON[]): GeoJSON[] {
-  const result = [];
+  const result = [data[0]];
   for (let i = 1; i < data.length; i++) {
     if (data[i].properties.time !== data[i - 1].properties.time) {
       result.push(data[i]);

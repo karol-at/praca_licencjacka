@@ -73,7 +73,7 @@ export function convertToGeoJSON(data: WarsawDataPoint[]): GeoJSON[] {
 }
 
 function reduceData(data: WarsawDataPoint[]): WarsawDataPoint[] {
-  const results: WarsawDataPoint[] = [];
+  const results: WarsawDataPoint[] = [data[0]];
   for (let i = 1; i < data.length; i++) {
     if (data[i].Time !== data[i - 1].Time) {
       results.push(data[i]);
