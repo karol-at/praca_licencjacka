@@ -96,18 +96,15 @@ export async function fetchData(
   database: keyof LineNames,
   lines: number[],
 ): Promise<void> {
+  let array: GdanskDataPoint[] | WarsawDataPoint[] = [];
   if (database === "gdanskData") {
-    const array: GdanskDataPoint[] = await GdanskAPI.getData(lines);
-    const query = array.map((item) =>
-      createInsertQuery(item, "gdanskData")
-    ).flat()[0];
-    execQuery(query);
+    array = await GdanskAPI.getData(lines);
   }
   if (database === "warsawData") {
-    const array: WarsawDataPoint[] = await WarsawAPI.getData(1, lines);
-    const query = array.map((item) =>
-      createInsertQuery(item, "warsawData")
-    ).flat()[0];
-    execQuery(query);
+    array = await WarsawAPI.getData(1, lines);
   }
+  if (array.length === 0) return;
+  const query =
+    array.map((item) => createInsertQuery(item, database)).flat()[0];
+  execQuery(query);
 }
