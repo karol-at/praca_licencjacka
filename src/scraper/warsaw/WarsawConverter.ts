@@ -38,6 +38,7 @@ export const criteria116: FilterCriteria = {
 };
 
 export function transformBusInfo(array: WarsawDataPoint[], today: string) {
+  if (array.length === 0) return;
   const busMap = Map.groupBy(array, (point) => point.VehicleNumber);
   const filteredArray: WarsawDataPoint[] = [];
   for (const item of busMap.values()) {

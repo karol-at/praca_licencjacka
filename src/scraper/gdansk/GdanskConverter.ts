@@ -42,6 +42,7 @@ export function transformBusInfo(
   array: GdanskDataPoint[],
   today: string,
 ): void {
+  if (array.length === 0) return;
   const rideMap = Map.groupBy(
     convertToGeoJSON(array),
     (item) => item.properties.startTime,
