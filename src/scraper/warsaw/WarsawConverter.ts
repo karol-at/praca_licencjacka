@@ -87,16 +87,18 @@ function createSplitPoints(
   data: WarsawDataPoint[],
   criteria: FilterCriteria,
 ): number[] {
-  const results = [];
+  const results: number[] = [];
   const locations = data.map((point, index) => {
     if (data[index + 1] === undefined) {
       return {
+        Time: point.Time,
         Lon: point.Lon,
         Lat: point.Lat,
         angle: 0,
       };
     }
     return {
+      Time: point.Time,
       Lon: point.Lon,
       Lat: point.Lat,
       angle: Math.atan2(
@@ -105,35 +107,22 @@ function createSplitPoints(
       ) * 180 / Math.PI,
     };
   });
-  for (let i = 0; i < locations.length; i++) {
-    if (
-      locations[i].angle < criteria.angles[0][0] &&
-      locations[i].angle > criteria.angles[0][1]
-    ) {
-      if (
-        booleanPointInPolygon(
-          point([locations[i].Lon, locations[i].Lat]),
-          criteria.polygons[0],
-        )
-      ) {
-        results.push(i);
-        i += 10;
-      }
-    }
-    if (
-      locations[i].angle < criteria.angles[1][0] &&
-      locations[i].angle > criteria.angles[1][1]
-    ) {
-      if (
-        booleanPointInPolygon(
-          point([locations[i].Lon, locations[i].Lat]),
-          criteria.polygons[1],
-        )
-      ) {
-        results.push(i);
-        i += 10;
-      }
-    }
+  const points = locations.filter((value) =>
+    value.angle < criteria.angles[0][0] &&
+      value.angle > criteria.angles[0][1] &&
+      booleanPointInPolygon(
+        point([value.Lon, value.Lat]),
+        criteria.polygons[0],
+      ) ||
+    value.angle < criteria.angles[1][0] &&
+      value.angle > criteria.angles[1][1] &&
+      booleanPointInPolygon(
+        point([value.Lon, value.Lat]),
+        criteria.polygons[1],
+      )
+  );
+  for (const item of points) {
+    results.push(locations.indexOf(item));
   }
   return results;
 }
