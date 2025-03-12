@@ -32,6 +32,7 @@ type FilterCriteria = {
   angles: [number[], number[]];
 };
 
+//TODO: fix polygons and angles to better split data
 export const criteria116: FilterCriteria = {
   polygons: [polygons.chomiczowka, polygons.wilanow],
   angles: [[-45, -135], [180, 90]],
@@ -48,13 +49,26 @@ export function transformBusInfo(array: WarsawDataPoint[], today: string) {
   }
   const rideMap = Map.groupBy(
     convertToGeoJSON(filteredArray),
-    (point) => point.properties.tripId.toString(),
+    (point) => point.properties.startTime.toString(),
   );
-  exportGeoJSON(rideMap, today, array[0].Lines);
+  let i: number = 0;
+  for (const [key, value] of rideMap){
+    i++
+    rideMap.set(key,
+      value.map(
+        item => {
+          item.properties.tripId = i
+          return item
+        }
+      )
+    )
+  }
+  const newRideMap = Map.groupBy(rideMap.values().toArray().flat(), item => item.properties.tripId)
+  exportGeoJSON(newRideMap, today, array[0].Lines);
 }
 
 export function convertToGeoJSON(data: WarsawDataPoint[]): GeoJSON[] {
-  return data.map((point, index) => {
+  return data.map((point) => {
     return {
       type: "Feature",
       geometry: {
@@ -67,7 +81,7 @@ export function convertToGeoJSON(data: WarsawDataPoint[]): GeoJSON[] {
         vehicleNumber: point.VehicleNumber,
         time: point.Time,
         startTime: point.StartTime ?? "",
-        tripId: index,
+        tripId: 0,
       },
     };
   });
@@ -87,7 +101,7 @@ function createSplitPoints(
   data: WarsawDataPoint[],
   criteria: FilterCriteria,
 ): number[] {
-  const results: number[] = [];
+  const results: number[] = [0];
   const locations = data.map((point, index) => {
     if (data[index + 1] === undefined) {
       return {
@@ -134,8 +148,8 @@ function splitData(
   const results: WarsawDataPoint[][] = [];
   for (let i = 0; i < splitPoints.length; i++) {
     results.push(data.slice(splitPoints[i], splitPoints[i + 1]));
-    for (let j = splitPoints[i]; j < splitPoints[i + 1]; j++) {
-      results[i][j].StartTime = data[i].Time;
+    for (let j = 0; j < results[i].length ; j++) {
+      results[i][j].StartTime = data[splitPoints[i]].Time;
     }
   }
   return results;
