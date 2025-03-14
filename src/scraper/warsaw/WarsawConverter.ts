@@ -2,7 +2,7 @@ import { exportGeoJSON, GeoJSON } from "../GeoJSON.ts";
 import { booleanPointInPolygon, point } from "npm:@turf/turf";
 import { polygons } from "./Polygons.ts";
 
-export function truncateData(
+function truncateData(
   data: WarsawDataPoint[],
   criteria: FilterCriteria,
 ): WarsawDataPoint[] {
@@ -35,7 +35,7 @@ type FilterCriteria = {
 //TODO: fix polygons and angles to better split data
 export const criteria116: FilterCriteria = {
   polygons: [polygons.chomiczowka, polygons.wilanow],
-  angles: [[-45, -135], [180, 90]],
+  angles: [[-90, -180], [180, 90]],
 };
 
 export function transformBusInfo(array: WarsawDataPoint[], today: string) {
@@ -52,18 +52,22 @@ export function transformBusInfo(array: WarsawDataPoint[], today: string) {
     (point) => point.properties.startTime.toString(),
   );
   let i: number = 0;
-  for (const [key, value] of rideMap){
-    i++
-    rideMap.set(key,
+  for (const [key, value] of rideMap) {
+    i++;
+    rideMap.set(
+      key,
       value.map(
-        item => {
-          item.properties.tripId = i
-          return item
-        }
-      )
-    )
+        (item) => {
+          item.properties.tripId = i;
+          return item;
+        },
+      ),
+    );
   }
-  const newRideMap = Map.groupBy(rideMap.values().toArray().flat(), item => item.properties.tripId)
+  const newRideMap = Map.groupBy(
+    rideMap.values().toArray().flat(),
+    (item) => item.properties.tripId,
+  );
   exportGeoJSON(newRideMap, today, array[0].Lines);
 }
 
@@ -148,7 +152,7 @@ function splitData(
   const results: WarsawDataPoint[][] = [];
   for (let i = 0; i < splitPoints.length; i++) {
     results.push(data.slice(splitPoints[i], splitPoints[i + 1]));
-    for (let j = 0; j < results[i].length ; j++) {
+    for (let j = 0; j < results[i].length; j++) {
       results[i][j].StartTime = data[splitPoints[i]].Time;
     }
   }
