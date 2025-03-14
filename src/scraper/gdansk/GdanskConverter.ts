@@ -47,16 +47,11 @@ export function transformBusInfo(
     convertToGeoJSON(array),
     (item) => item.properties.startTime,
   );
-  for (const [time, ride] of rideMap) {
-    rideMap.set(time, reduceData(ride));
-  }
-  const sorted: GeoJSON[][] = rideMap.values().toArray().sort((a, b) =>
-    new Date(a[0].properties.startTime).getTime() -
-    new Date(b[0].properties.startTime).getTime()
-  );
   const sortedMap = new Map<number, GeoJSON[]>();
-  for (let i = 0; i < sorted.length; i++) {
-    sortedMap.set(i, sorted[i]);
+  let i = 1;
+  for (const [_time, ride] of rideMap) {
+    sortedMap.set(i, reduceData(ride))
+    i++
   }
   exportGeoJSON(sortedMap, today, array[0].routeId.toString());
 }
