@@ -29,7 +29,7 @@ Errors caught: ${errors}
 Current executing status: ${executing}`;
 
 //Fetch data every 10 seconds
-cron("*/10 * * * * *",async () => {
+cron("*/10 * * * * *", async () => {
   console.clear();
   console.log(progressString(new Date(), lastSave, errors.length, executing));
   if (!executing) return;
@@ -56,11 +56,10 @@ cron("37 4 * * *", () => {
 //Save data every 30 minutes
 cron("*/30 * * * *", () => {
   if (!executing) return;
-  
   WarsawConverter.transformBusInfo(
     database.getWarsawBuses(116),
-    today
-);
+    today,
+  );
   gdanskConverter.transformBusInfo(
     database.getGdanskBuses(106),
     today,
@@ -73,8 +72,8 @@ cron("*/30 * * * *", () => {
 cron("30 0 * * *", () => {
   executing = false;
   WarsawConverter.transformBusInfo(
-    database.getWarsawBuses(116), 
-    today
+    database.getWarsawBuses(116),
+    today,
   );
   gdanskConverter.transformBusInfo(
     database.getGdanskBuses(106),
