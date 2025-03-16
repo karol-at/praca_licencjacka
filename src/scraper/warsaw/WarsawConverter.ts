@@ -80,8 +80,8 @@ export function convertToGeoJSON(data: WarsawDataPoint[]): GeoJSON[] {
         coordinates: [point.Lon, point.Lat],
       },
       properties: {
-        type: 1,
-        line: point.Lines,
+        line: Number(point.Lines),
+        brigade: point.Brigade,
         vehicleNumber: point.VehicleNumber,
         time: point.Time,
         startTime: point.StartTime ?? "",

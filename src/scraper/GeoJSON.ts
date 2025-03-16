@@ -13,12 +13,11 @@ export type GeoJSON = {
     coordinates: [number, number];
   };
   properties: {
-    type: 1 | 2;
-    line: string;
-    vehicleNumber: string;
+    line: number;
     time: string;
     startTime: string;
     tripId: number;
+    [key: string]: string | number;
   };
 };
 
