@@ -25,7 +25,7 @@ export type WarsawDataPoint = {
 //criteria for filtering data
 //polygons should contain the starting and ending points of the route
 //angles should contain the minimum and maximum angles for the starting and ending points
-//the elements should be typed in going clockwise on a circle stating from -180 on the left
+//the elements should be typed in going clockwise on a circle stating from -180 on the bottom
 type FilterCriteria = {
   // deno-lint-ignore no-explicit-any
   polygons: any[];
@@ -35,7 +35,7 @@ type FilterCriteria = {
 //TODO: fix polygons and angles to better split data
 export const criteria116: FilterCriteria = {
   polygons: [polygons.chomiczowka, polygons.wilanow],
-  angles: [[-90, -180], [180, 90]],
+  angles: [[0, -90], [180, 90]],
 };
 
 export function transformBusInfo(array: WarsawDataPoint[], today: string) {
