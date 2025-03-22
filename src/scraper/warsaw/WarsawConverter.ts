@@ -29,13 +29,16 @@ export type WarsawDataPoint = {
 type FilterCriteria = {
   // deno-lint-ignore no-explicit-any
   polygons: any[];
-  angles: [number[], number[]];
+  angles: [(a: number) => boolean, (a: number) => boolean];
 };
 
 //TODO: fix polygons and angles to better split data
 export const criteria116: FilterCriteria = {
   polygons: [polygons.chomiczowka, polygons.wilanow],
-  angles: [[0, -90], [180, 90]],
+  angles: [
+    (x) => x < 0 && x > -90,
+    (x) => x < -135 && x > -180 || x < 180 && x > 135,
+  ],
 };
 
 export function transformBusInfo(array: WarsawDataPoint[], today: string) {
@@ -126,14 +129,12 @@ function createSplitPoints(
     };
   });
   const points = locations.filter((value) =>
-    value.angle < criteria.angles[0][0] &&
-      value.angle > criteria.angles[0][1] &&
+    criteria.angles[0](value.angle) &&
       booleanPointInPolygon(
         point([value.Lon, value.Lat]),
         criteria.polygons[0],
       ) ||
-    value.angle < criteria.angles[1][0] &&
-      value.angle > criteria.angles[1][1] &&
+    criteria.angles[1](value.angle) &&
       booleanPointInPolygon(
         point([value.Lon, value.Lat]),
         criteria.polygons[1],
