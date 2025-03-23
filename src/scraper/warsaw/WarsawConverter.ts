@@ -47,6 +47,13 @@ const criteria: { [key: number]: FilterCriteria } = {
       (x) => x < 0 && x > -90,
     ],
   },
+  158: {
+    polygons: [polygons.reduta, polygons.witolin],
+    angles: [
+      (x) => !(x < 0 && x > -135),
+      (x) => x < -45 && x > -135,
+    ],
+  },
 };
 
 export function transformBusInfo(

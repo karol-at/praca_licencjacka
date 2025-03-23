@@ -34,7 +34,7 @@ cron("*/10 * * * * *", async () => {
   console.log(progressString(new Date(), lastSave, errors.length, executing));
   if (!executing) return;
   try {
-    await database.fetchData("warsawData", [116, 731]);
+    await database.fetchData("warsawData", [116, 731, 158]);
   } catch (e) {
     errors.push(e);
   }
@@ -56,16 +56,13 @@ cron("37 4 * * *", () => {
 //Save data every 30 minutes
 cron("*/30 * * * *", () => {
   if (!executing) return;
-  WarsawConverter.transformBusInfo(
-    database.getWarsawBuses(116),
-    today,
-    116
-  );
-  WarsawConverter.transformBusInfo(
-    database.getWarsawBuses(731),
-    today,
-    731
-  );
+  for (const line of [116, 158, 731]) {
+    WarsawConverter.transformBusInfo(
+      database.getWarsawBuses(line),
+      today,
+      line,
+    );
+  }
   gdanskConverter.transformBusInfo(
     database.getGdanskBuses(106),
     today,
@@ -77,16 +74,13 @@ cron("*/30 * * * *", () => {
 //Daily cleanup
 cron("30 0 * * *", () => {
   executing = false;
-  WarsawConverter.transformBusInfo(
-    database.getWarsawBuses(116),
-    today,
-    116,
-  );
-  WarsawConverter.transformBusInfo(
-    database.getWarsawBuses(731),
-    today,
-    731,
-  );
+  for (const line of [116, 158, 731]) {
+    WarsawConverter.transformBusInfo(
+      database.getWarsawBuses(line),
+      today,
+      line,
+    );
+  }
   gdanskConverter.transformBusInfo(
     database.getGdanskBuses(106),
     today,
