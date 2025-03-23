@@ -39,7 +39,7 @@ cron("*/10 * * * * *", async () => {
     errors.push(e);
   }
   try {
-    await database.fetchData("gdanskData", [106]);
+    await database.fetchData("gdanskData", [106, 112, 208]);
   } catch (e) {
     errors.push(e);
   }
@@ -63,10 +63,12 @@ cron("*/30 * * * *", () => {
       line,
     );
   }
-  gdanskConverter.transformBusInfo(
-    database.getGdanskBuses(106),
-    today,
-  );
+  for (const line of [106, 112, 208]) {
+    gdanskConverter.transformBusInfo(
+      database.getGdanskBuses(line),
+      today,
+    );
+  }
   const date = new Date();
   lastSave = date.toLocaleTimeString();
 });
@@ -81,10 +83,12 @@ cron("30 0 * * *", () => {
       line,
     );
   }
-  gdanskConverter.transformBusInfo(
-    database.getGdanskBuses(106),
-    today,
-  );
+  for (const line of [106, 112, 208]) {
+    gdanskConverter.transformBusInfo(
+      database.getGdanskBuses(line),
+      today,
+    );
+  }
   database.dropTables();
   const writePath = Deno.env.get("DIRECTORY")
     ? `${Deno.env.get("DIRECTORY")}/${today}/errors.txt`
