@@ -32,21 +32,33 @@ type FilterCriteria = {
   angles: [(a: number) => boolean, (a: number) => boolean];
 };
 
-//TODO: fix polygons and angles to better split data
-export const criteria116: FilterCriteria = {
-  polygons: [polygons.chomiczowka, polygons.wilanow],
-  angles: [
-    (x) => x < 0 && x > -90,
-    (x) => x < -135 && x > -180 || x < 180 && x > 135,
-  ],
+const criteria: { [key: number]: FilterCriteria } = {
+  116: {
+    polygons: [polygons.chomiczowka, polygons.wilanow],
+    angles: [
+      (x) => x < 0 && x > -90,
+      (x) => x < -135 && x > -180 || x < 180 && x > 135,
+    ],
+  },
+  731: {
+    polygons: [polygons.żerań, polygons.legionowo],
+    angles: [
+      (x) => x < 0 && x > -90,
+      (x) => x < 0 && x > -90,
+    ],
+  },
 };
 
-export function transformBusInfo(array: WarsawDataPoint[], today: string) {
+export function transformBusInfo(
+  array: WarsawDataPoint[],
+  today: string,
+  line: number,
+) {
   if (array.length === 0) return;
   const busMap = Map.groupBy(array, (point) => point.VehicleNumber);
   const filteredArray: WarsawDataPoint[] = [];
   for (const item of busMap.values()) {
-    truncateData(item, criteria116).forEach((point) => {
+    truncateData(item, criteria[line]).forEach((point) => {
       filteredArray.push(point);
     });
   }
