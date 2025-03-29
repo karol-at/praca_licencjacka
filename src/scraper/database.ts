@@ -105,6 +105,6 @@ export async function fetchData(
   }
   if (array.length === 0) return;
   const query =
-    array.map((item) => createInsertQuery(item, database)).flat()[0];
+    array.map((item) => createInsertQuery(item, database)).join('\n');
   execQuery(query);
 }
