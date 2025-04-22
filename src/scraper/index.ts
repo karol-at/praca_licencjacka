@@ -1,12 +1,8 @@
 import "jsr:@std/dotenv/load";
 import { cron } from "https://deno.land/x/deno_cron@v1.0.0/cron.ts";
 import * as database from "./database.ts";
-import * as gdanskConverter from "./gdansk/GdanskConverter.ts";
-import * as WarsawConverter from "./warsaw/WarsawConverter.ts";
 
-let executing: boolean = true;
 let today: string = new Date().toISOString().split("T")[0];
-let lastSave: string;
 // deno-lint-ignore no-explicit-any
 const errors: any[] = [];
 if (Deno.env.get("APIKEY") === undefined) {
@@ -15,24 +11,31 @@ if (Deno.env.get("APIKEY") === undefined) {
 if (Deno.env.get("DIRECTORY") === undefined) {
   throw new Error("DIRECTORY is not set");
 }
+database.createTables()
 
 const progressString = (
   date: Date,
-  lastSave: string,
   errors: number,
-  executing: boolean,
 ) =>
   `Process is executing
 Last data fetch: ${date.toLocaleTimeString()}
-Last data save: ${lastSave}
-Errors caught: ${errors}
-Current executing status: ${executing}`;
+Errors caught: ${errors}`;
 
 //Fetch data every 10 seconds
 cron("*/10 * * * * *", async () => {
+  const now = new Date().toISOString().split('T')[0];
+  if (now !== today) {
+    today = now;
+    database.reconnect(today)
+    database.createTables()
+    const writePath = Deno.env.get("DIRECTORY")
+      ? `${Deno.env.get("DIRECTORY")}/${today}/errors.txt`
+      : "./results";
+    Deno.writeTextFile(writePath, JSON.stringify(errors));
+    errors.length = 0;
+  }
   console.clear();
-  console.log(progressString(new Date(), lastSave, errors.length, executing));
-  if (!executing) return;
+  console.log(progressString(new Date(), errors.length));
   try {
     await database.fetchData("warsawData", [116, 731, 158]);
   } catch (e) {
@@ -43,56 +46,4 @@ cron("*/10 * * * * *", async () => {
   } catch (e) {
     errors.push(e);
   }
-});
-
-//Start data fetching
-cron("37 4 * * *", () => {
-  const date = new Date();
-  today = `${date.toISOString().split("T")[0]}`;
-  database.createTables();
-  executing = true;
-});
-
-//Save data every 30 minutes
-cron("*/30 * * * *", () => {
-  if (!executing) return;
-  for (const line of [116, 158, 731]) {
-    WarsawConverter.transformBusInfo(
-      database.getWarsawBuses(line),
-      today,
-      line,
-    );
-  }
-  for (const line of [106, 112, 208]) {
-    gdanskConverter.transformBusInfo(
-      database.getGdanskBuses(line),
-      today,
-    );
-  }
-  const date = new Date();
-  lastSave = date.toLocaleTimeString();
-});
-
-//Daily cleanup
-cron("30 0 * * *", () => {
-  executing = false;
-  for (const line of [116, 158, 731]) {
-    WarsawConverter.transformBusInfo(
-      database.getWarsawBuses(line),
-      today,
-      line,
-    );
-  }
-  for (const line of [106, 112, 208]) {
-    gdanskConverter.transformBusInfo(
-      database.getGdanskBuses(line),
-      today,
-    );
-  }
-  database.dropTables();
-  const writePath = Deno.env.get("DIRECTORY")
-    ? `${Deno.env.get("DIRECTORY")}/${today}/errors.txt`
-    : "./results";
-  Deno.writeTextFile(writePath, JSON.stringify(errors));
-  errors.length = 0;
 });

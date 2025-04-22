@@ -5,11 +5,12 @@ import * as WarsawAPI from "./warsaw/APIHelper.ts";
 import * as GdanskAPI from "./gdansk/APIHelper.ts";
 import "jsr:@std/dotenv/load";
 
-const path = Deno.env.get("DATABASE");
+const path = Deno.env.get("DIRECTORY");
+const today = new Date();
 
 if (path === undefined) throw new Deno.errors.InvalidData();
 
-const db: DatabaseSync = new DatabaseSync(path);
+const db: DatabaseSync = new DatabaseSync(path + '/' + today.toISOString().split('T')[0] + '.db');
 
 interface LineNames {
   warsawData: string;
@@ -19,7 +20,7 @@ interface LineNames {
 export const createTables = (): void =>
   db.exec(
     `
-      CREATE TABLE warsawData (
+      CREATE TABLE IF NOT EXISTS warsawData (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         Lines INTEGER,
         Lat REAL,
@@ -28,7 +29,7 @@ export const createTables = (): void =>
         Brigade INTEGER,
         VehicleNumber INTEGER
       );
-      CREATE TABLE gdanskData (
+      CREATE TABLE IF NOT EXISTS gdanskData (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         lat REAL,
         lon REAL,
@@ -56,6 +57,11 @@ export const dropTables = (): void =>
       DROP TABLE gdanskData
     `,
   );
+
+export function reconnect(date:string) {
+  db.close()
+  db.open(path + '/' + date + '.db')
+}
 
 function createInsertQuery(
   item: WarsawDataPoint | GdanskDataPoint,
