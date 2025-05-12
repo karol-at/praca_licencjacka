@@ -6,7 +6,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "deno src/scraper_warsaw/index.ts",
     "prod": "deno -A src/scraper/index.ts",
-    "analyze": ".venv/python.exe src/analyst/main.py"
+    "analyze": ".venv/python.exe src/analyst/main.py",
+    "convert": "deno -A src/converter/index.ts"
   },
   "keywords": [],
   "author": "",
