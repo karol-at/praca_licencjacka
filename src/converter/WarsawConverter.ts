@@ -1,4 +1,4 @@
-import { exportGeoJSON, GeoJSON } from "../scraper/GeoJSON.ts";
+import { exportGeoJSON, GeoJSON } from "./GeoJSON.ts";
 import { booleanPointInPolygon, point } from "npm:@turf/turf";
 import { polygons } from "./Polygons.ts";
 
