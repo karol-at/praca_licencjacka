@@ -1,4 +1,4 @@
-import { exportGeoJSON, GeoJSON } from "../GeoJSON.ts";
+import { exportGeoJSON, GeoJSON } from "../scraper/GeoJSON.ts";
 
 export type GdanskDataPoint = {
   generated: string;

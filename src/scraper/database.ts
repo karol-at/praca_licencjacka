@@ -1,6 +1,6 @@
 import { DatabaseSync } from "node:sqlite";
-import { WarsawDataPoint } from "./warsaw/WarsawConverter.ts";
-import { GdanskDataPoint } from "./gdansk/GdanskConverter.ts";
+import { WarsawDataPoint } from "../converter/WarsawConverter.ts";
+import { GdanskDataPoint } from "../converter/GdanskConverter.ts";
 import * as WarsawAPI from "./warsaw/APIHelper.ts";
 import * as GdanskAPI from "./gdansk/APIHelper.ts";
 import "jsr:@std/dotenv/load";

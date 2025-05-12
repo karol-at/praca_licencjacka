@@ -1,4 +1,4 @@
-import { GdanskDataPoint } from "./GdanskConverter.ts";
+import { GdanskDataPoint } from "../../converter/GdanskConverter.ts";
 
 const URI = "https://ckan2.multimediagdansk.pl/gpsPositions?v=2";
 

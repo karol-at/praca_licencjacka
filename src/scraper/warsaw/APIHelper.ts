@@ -1,4 +1,4 @@
-import { WarsawDataPoint } from "./WarsawConverter.ts";
+import { WarsawDataPoint } from "../../converter/WarsawConverter.ts";
 import "jsr:@std/dotenv/load";
 
 const resource_id = "20f2e5503e-927d-4ad3-9500-4ab9e55deb59";
