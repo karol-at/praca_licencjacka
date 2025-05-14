@@ -39,7 +39,7 @@ export function exportGeoJSON(
       features: value,
     });
     await Deno.writeTextFile(
-      `${targetDirectory}/autobus_${key}.json`,
+      `${targetDirectory}/autobus_${key}.geojson`,
       geoJSON,
     );
   });
