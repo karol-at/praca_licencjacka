@@ -105,12 +105,17 @@ export function convertToGeoJSON(data: WarsawDataPoint[]): GeoJSON[] {
         line: Number(point.Lines),
         brigade: point.Brigade,
         vehicleNumber: point.VehicleNumber,
-        time: point.Time,
-        startTime: point.StartTime ?? "",
+        time: convertToUTC(point.Time),
+        startTime: convertToUTC(point.StartTime ?? ""),
         tripId: 0,
       },
     };
   });
+}
+
+function convertToUTC(time: string): string {
+  const split = time.split(" ")
+  return split[0] + 'T' + split[1] + "+01:00"
 }
 
 function reduceData(data: WarsawDataPoint[]): WarsawDataPoint[] {
@@ -149,15 +154,15 @@ function createSplitPoints(
   });
   const points = locations.filter((value) =>
     criteria.angles[0](value.angle) &&
-      booleanPointInPolygon(
-        point([value.Lon, value.Lat]),
-        criteria.polygons[0],
-      ) ||
+    booleanPointInPolygon(
+      point([value.Lon, value.Lat]),
+      criteria.polygons[0],
+    ) ||
     criteria.angles[1](value.angle) &&
-      booleanPointInPolygon(
-        point([value.Lon, value.Lat]),
-        criteria.polygons[1],
-      )
+    booleanPointInPolygon(
+      point([value.Lon, value.Lat]),
+      criteria.polygons[1],
+    )
   );
   for (const item of points) {
     results.push(locations.indexOf(item));
