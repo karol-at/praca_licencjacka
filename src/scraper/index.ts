@@ -26,6 +26,7 @@ cron("*/10 * * * * *", async () => {
   const now = new Date().toISOString().split('T')[0];
   if (now !== today) {
     today = now;
+    fetchGTFS(today)
     database.reconnect(today)
     database.createTables()
     const writePath = Deno.env.get("DIRECTORY")
@@ -47,3 +48,16 @@ cron("*/10 * * * * *", async () => {
     errors.push(e);
   }
 });
+
+
+function fetchGTFS(date: string) {
+  Deno.mkdirSync(`${Deno.env.get("DIRECTORY")}/${date}/gtfs`, { recursive: true })
+  fetch('https://gtfs.ztm.waw.pl/last').then(res =>
+    Deno.writeFile(`${Deno.env.get("DIRECTORY")}/${date}/gtfs/warsaw.zip`, res.body ?? new Uint8Array())
+  )
+  fetch('https://ckan.multimediagdansk.pl/dataset/c24aa637-3619-4dc2-a171-a23eec8f2172/resource/30e783e4-2bec-4a7d-bb22-ee3e3b26ca96/download/gtfsgoogle.zip')
+    .then(
+      res => Deno.writeFile(`${Deno.env.get("DIRECTORY")}/${date}/gtfs/gdansk.zip`, res.body ?? new Uint8Array()))
+}
+
+fetchGTFS(today)
