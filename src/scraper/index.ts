@@ -29,10 +29,6 @@ cron("*/10 * * * * *", async () => {
     fetchGTFS(today)
     database.reconnect(today)
     database.createTables()
-    const writePath = Deno.env.get("DIRECTORY")
-      ? `${Deno.env.get("DIRECTORY")}/${today}/errors.txt`
-      : "./results";
-    Deno.writeTextFile(writePath, JSON.stringify(errors));
     errors.length = 0;
   }
   console.clear();

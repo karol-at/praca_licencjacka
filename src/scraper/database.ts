@@ -10,7 +10,7 @@ const today = new Date();
 
 if (path === undefined) throw new Deno.errors.InvalidData();
 
-const db: DatabaseSync = new DatabaseSync(path + '/' + today.toISOString().split('T')[0] + '.db');
+let db: DatabaseSync = new DatabaseSync(path + '/' + today.toISOString().split('T')[0] + '.db');
 
 interface LineNames {
   warsawData: string;
@@ -58,9 +58,9 @@ export const dropTables = (): void =>
     `,
   );
 
-export function reconnect(date:string) {
+export function reconnect(date: string) {
   db.close()
-  db.open(path + '/' + date + '.db')
+  db = new DatabaseSync(path + '/' + date + '.db')
 }
 
 function createInsertQuery(
