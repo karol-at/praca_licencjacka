@@ -10,7 +10,10 @@ const today = new Date();
 
 if (path === undefined) throw new Deno.errors.InvalidData();
 
-let db: DatabaseSync = new DatabaseSync(path + '/' + today.toISOString().split('T')[0] + '.db');
+Deno.mkdir(path + "/" + today.toISOString().split("T")[0], { recursive: true });
+let db: DatabaseSync = new DatabaseSync(
+  path + "/" + today.toISOString().split("T")[0] + "/database.db",
+);
 
 interface LineNames {
   warsawData: string;
@@ -59,8 +62,9 @@ export const dropTables = (): void =>
   );
 
 export function reconnect(date: string) {
-  db.close()
-  db = new DatabaseSync(path + '/' + date + '.db')
+  db.close();
+  Deno.mkdir(path + "/" + date, { recursive: true });
+  db = new DatabaseSync(path + "/" + date + "/database.db");
 }
 
 function createInsertQuery(
@@ -110,7 +114,8 @@ export async function fetchData(
     array = await WarsawAPI.getData(1, lines);
   }
   if (array.length === 0) return;
-  const query =
-    array.map((item) => createInsertQuery(item, database)).join('\n');
+  const query = array.map((item) => createInsertQuery(item, database)).join(
+    "\n",
+  );
   execQuery(query);
 }
