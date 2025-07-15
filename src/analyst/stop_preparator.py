@@ -1,105 +1,72 @@
-import requests
-import dotenv
-from arcpy import GTFSStopsToFeatures_conversion, da, AddField_management, Copy_management
+import config
+import arcpy
+import os
+import env
+import pandas
+import zipfile
 from typing import Literal, TypeAlias, TypedDict
 
-path = dotenv.dotenv_values()['DIRECTORY']
-api_key = dotenv.dotenv_values()['APIKEY']
 
-warsaw_response_point: TypeAlias = list[
-    dict[
-        Literal[
-            'key',
-            'value'
-        ],
-        int | str | None
-    ]
-]
+arcpy.env.overwriteOutput = True
+if not os.path.isdir(fr"{env.path}\database.gdb"):
+    arcpy.management.CreateFileGDB(env.path, "database.gdb", "CURRENT")
+arcpy.env.workspace = f"{env.path}\\database.gdb"
 
 
-class gdansk_response_point(TypedDict):
-    routeId: int
-    tripId: int
-    agncyId: int
-    topologyVersionId: int
-    arrivalTime: str
-    departureTime: str
-    stopId: int
-    stopSequence: int
-    date: str
-    variantId: int
-    noteSymbol: str
-    noteDescription: str
-    busServiceName: str
-    order: int
-    passenger: bool
-    nonpassenger: int
-    ticketZoneBorder: int
-    onDemand: int
-    virtual: int
-    islupek: int
-    wheelchairAccessible: int
-    stopShortName: str
-    stopHeadsign: str
+"""
+Get stops from GTFS data for a given path and city.
+:param path: Path to the GTFS zip file.
+:param city: City for which to get the stops, either 'warsaw' or 'gdansk'.
+"""
 
 
-class formatted_warsaw_response_point(TypedDict):
-    symbol_2: None
-    symbol_1: None
-    brygada: str
-    kierunek: str
-    trasa: str
-    czas: str
-    przystanek: str
+def get_stops(path: str, city: Literal['warsaw', 'gdansk']) -> pandas.DataFrame:
+
+    search_pattern = "|".join([str(line) for line in config.lines[city]])
+    date = path.split('\\')[-3].replace('-', '')
+
+    with zipfile.ZipFile(path) as zip_file:
+        with zip_file.open('stop_times.txt') as stop_times:
+            stop_times_dataframe: pandas.DataFrame = pandas.read_csv(
+                stop_times) # type: ignore
+        with zip_file.open('stops.txt') as stops:
+            stops_dataframe: pandas.DataFrame = pandas.read_csv(
+                stops)  # type: ignore       
+        with zip_file.open('trips.txt') as trips:
+            trips_dataframe: pandas.DataFrame = pandas.read_csv(trips) # type: ignore
+        with zip_file.open('routes.txt') as routes:
+            routes_dataframe: pandas.DataFrame = pandas.read_csv(
+                routes) # type: ignore
+        with zip_file.open('calendar.txt' if 'warsaw' == city else 'calendar_dates.txt') as calendar:
+            calendar_dataframe: pandas.DataFrame = pandas.read_csv(
+                calendar) # type: ignore
+
+    join: pandas.DataFrame = stop_times_dataframe.merge(trips_dataframe, how='left', on='trip_id', suffixes=('', '-t'))\
+        .merge(routes_dataframe, how='left', left_on='route_id', right_on='route_id', suffixes=('', '-r'))\
+        .merge(calendar_dataframe, how='left', left_on='service_id', right_on='service_id', suffixes=('', '-c'))\
+        .merge(stops_dataframe, how='left', on='stop_id', suffixes=('', '-s'))
+    print('GTFS data joined')
+    selection = join[join['route_id'].str.contains(search_pattern)]
+    assert isinstance(selection, pandas.DataFrame)
+    selection = selection.sort_values(by='arrival_time')
+    if city == 'warsaw':
+        selection = selection.rename(columns={'start_date': 'date'})
+    selection = selection[selection['date'] == int(date)]
+    assert isinstance(selection, pandas.DataFrame)
+    selection['trip_count'] = selection.groupby('stop_id').cumcount()
+    pivoted = selection.pivot_table(
+        index=['stop_id', 'stop_lat', 'stop_lon', 'stop_name', 'trip_headsign'],
+        columns='trip_count',
+        values=['arrival_time'],
+        aggfunc='first'
+    )
+    print(f'GTFS data processed for {city}')
+    print(pivoted.head(10))
+    pivoted.columns = [f'trip_{i}' for [_, i] in pivoted.columns]
+    pivoted = pivoted.reset_index()
+    return pivoted
 
 
-class formatted_stop(TypedDict):
-    time: str
-    stop_id: str
-    city: str
 
-# Get stop times for a desired stop by ID, automatically switches between Warsaw and Gdańsk depending on supplied arguments
+# TODO: GTFS data processed -> convert to feature -> spatial join -> produce results
 
-
-def get_stops(stop_id: int, line: int, weekend: bool = False, stop_number: str | None = None) -> list[formatted_warsaw_response_point | gdansk_response_point]:
-    if stop_number == None:  # Formatted for Gdansk API
-        resp: list[gdansk_response_point] = requests.get(
-            'https://ckan2.multimediagdansk.pl/stopTimes',
-            {
-                # TODO: dates in the past don't work: modify to use future dates somehow
-                'date': '2025-03-22' if weekend else '2025-03-18',
-                'routeId': line
-            }
-        ).json()['stopTimes']
-        resp = filter(lambda item: item['stopId'] == stop_id, resp)
-        resp.sort(key=lambda item: item['departureTime'])
-        return resp
-    else:  # Formatted for Warsaw API
-        res: list[warsaw_response_point] = requests.get(
-            'https://api.um.warszawa.pl/api/action/dbtimetable_get/',
-            {
-                'id': 'e923fa0e-d96c-43f9-ae6e-60518c9f3238',
-                'apikey': api_key,
-                'busstopId': stop_id,
-                'line': line,
-                'busstopNr': stop_number
-            }
-        ).json()['result']
-        stops: list[formatted_warsaw_response_point] = []
-        for index, item in enumerate(res):
-            stops.append({element['key']: element['value']
-                         for element in item})
-            stops[index]['przystanek'] = str(stop_id) + stop_number
-        stops.sort(key=lambda item: item['czas'])
-        return format_stops(stops)
-
-# Format stops to common type
-
-
-def format_stops(stops: list[formatted_warsaw_response_point | gdansk_response_point]) -> list[formatted_stop]:
-    # Check for unique key only present in Warsaw stop data
-    if 'przystanek' in stops[0]:
-        return [{'time': item['czas'], 'stop_id': item['przystanek'], 'city': 'Warsaw'} for item in stops]
-    # Check for unique key only present in Gdańsk stop data
-    elif 'departureTime' in stops[0]:
-        return [{'time': item['departureTime'], 'stop_id': item['stopId'], 'city': 'Gdansk'} for item in stops]
