@@ -34,6 +34,7 @@ export function exportGeoJSON(
     //reached if directory already exists, in that case do nothing
   }
   dataMap.forEach(async (value, key) => {
+    if (value.length < 10) return;
     const geoJSON = JSON.stringify({
       type: "FeatureCollection",
       features: value,
@@ -45,16 +46,16 @@ export function exportGeoJSON(
   });
 }
 
-export function getTimestamp(date:string): number {
+export function getTimestamp(date: string): number {
   return date
-  .replace(' ', 'T')
-  .split('T')[1]
-  .split(':')
-  .map(Number)
-  .reduce((p,c,i) => {
-    if (i == 0) return c * 3600
-    if (i == 1) return c * 60 + p
-    if (i == 2) return c + p
-    return 0
-  })
+    .replace(" ", "T")
+    .split("T")[1]
+    .split(":")
+    .map(Number)
+    .reduce((p, c, i) => {
+      if (i == 0) return c * 3600;
+      if (i == 1) return c * 60 + p;
+      if (i == 2) return c + p;
+      return 0;
+    });
 }
