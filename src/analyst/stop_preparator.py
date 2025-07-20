@@ -5,22 +5,22 @@ import env
 import pandas
 import zipfile
 from typing import Literal, TypeAlias, TypedDict
+from utils import sanitize_str
 
 
 arcpy.env.overwriteOutput = True
-if not os.path.isdir(fr"{env.path}\database.gdb"):
-    arcpy.management.CreateFileGDB(env.path, "database.gdb", "CURRENT")
-arcpy.env.workspace = f"{env.path}\\database.gdb"
 
 
-"""
-Get stops from GTFS data for a given path and city.
-:param path: Path to the GTFS zip file.
-:param city: City for which to get the stops, either 'warsaw' or 'gdansk'.
-"""
+
 
 
 def get_stops(path: str, city: Literal['warsaw', 'gdansk']) -> pandas.DataFrame:
+    """
+    Get stops from GTFS data for a given path and city.
+    Args:
+        path (str): Path to the GTFS zip file.
+        city (Literal['warsaw', 'gdansk']): City for which to get the stops, either 'warsaw' or 'gdansk'.
+    """
 
     search_pattern = "|".join([str(line) for line in config.lines[city]])
     date = path.split('\\')[-3].replace('-', '')
@@ -55,7 +55,7 @@ def get_stops(path: str, city: Literal['warsaw', 'gdansk']) -> pandas.DataFrame:
     assert isinstance(selection, pandas.DataFrame)
     selection['trip_count'] = selection.groupby('stop_id').cumcount()
     pivoted = selection.pivot_table(
-        index=['stop_id', 'stop_lat', 'stop_lon', 'stop_name', 'trip_headsign'],
+        index=['stop_id', 'stop_lat', 'stop_lon', 'stop_name','route_short_name', 'trip_headsign'],
         columns='trip_count',
         values=['arrival_time'],
         aggfunc='first'
@@ -67,6 +67,30 @@ def get_stops(path: str, city: Literal['warsaw', 'gdansk']) -> pandas.DataFrame:
     return pivoted
 
 
+def split_lines(df: pandas.DataFrame):
+    grouped= df.groupby('route_short_name')
+    return {i : frame.dropna(axis=1, how='all').dropna(thresh= 10) for i,frame in grouped}
 
-# TODO: GTFS data processed -> convert to feature -> spatial join -> produce results
+
+
+def stops_to_features(path: str, city: Literal['warsaw', 'gdansk'], table: pandas.DataFrame) -> list[str]:
+    """
+    Convert a dataframe with timetables to feature classes for a single bus line
+    Args:
+        path (str): Path to the daily working directory's geodatabase
+        city {'warsaw', 'gdansk'}:  the city to be processed
+        table (DataFrame): pandas dataframe containing processed GTFS data for a list of bus stops with timetables
+    Returns:
+        a list of layer names for specific bus lines
+    """
+    arcpy.management.CreateFileGDB(path, f'{city}.gdb')
+    stops_numpy_array = table.to_numpy()
+    arcpy.da.NumPyArrayToTable(stops_numpy_array, f'{city}_table')
+    arcpy.XYTableToPoint_management(f'{city}_table', f'{city}_stops', 'stop_lon', 'stop_lat')
+    freq_table = arcpy.analysis.Frequency(f'{city}_table', f'{city}_freq', 'trip_headsign')
+    result = []
+    for line in arcpy.da.SearchCursor(freq_table, 'trip_headsign'):
+        arcpy.analysis.Select(f'{city}_stops', sanitize_str(f'{line[0]}_{city}_stops'), f"trip_headsign = '{line[0]}'")
+        result.append(sanitize_str(f'{line[0]}_{city}_stops'))
+    return result
 
