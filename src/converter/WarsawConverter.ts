@@ -1,4 +1,4 @@
-import { exportGeoJSON, GeoJSON } from "./GeoJSON.ts";
+import { exportGeoJSON, GeoJSON, getTimestamp } from "./GeoJSON.ts";
 import { booleanPointInPolygon, point } from "npm:@turf/turf";
 import { polygons } from "./Polygons.ts";
 
@@ -106,7 +106,9 @@ export function convertToGeoJSON(data: WarsawDataPoint[]): GeoJSON[] {
         brigade: point.Brigade,
         vehicleNumber: point.VehicleNumber,
         time: convertToUTC(point.Time),
+        timestamp: getTimestamp(point.Time),
         startTime: convertToUTC(point.StartTime ?? ""),
+        startTimestamp: getTimestamp(point.StartTime ?? ""),
         tripId: 0,
       },
     };

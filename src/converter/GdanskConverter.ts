@@ -1,4 +1,4 @@
-import { exportGeoJSON, GeoJSON } from "./GeoJSON.ts";
+import { exportGeoJSON, GeoJSON, getTimestamp } from "./GeoJSON.ts";
 
 export type GdanskDataPoint = {
   generated: string;
@@ -39,7 +39,9 @@ function convertToGeoJSON(data: GdanskDataPoint[]): GeoJSON[] {
         gpsQuality: point.gpsQuality,
         tripId: 0,
         time: point.generated,
+        timestamp: getTimestamp(point.generated),
         startTime: point.scheduledTripStartTime,
+        startTimestamp: getTimestamp(point.scheduledTripStartTime),
       },
     };
   });
@@ -57,8 +59,8 @@ export function transformBusInfo(
   const sortedMap = new Map<number, GeoJSON[]>();
   let i = 1;
   for (const [_time, ride] of rideMap) {
-    sortedMap.set(i, reduceData(ride))
-    i++
+    sortedMap.set(i, reduceData(ride));
+    i++;
   }
   exportGeoJSON(sortedMap, today, array[0].routeId.toString());
 }

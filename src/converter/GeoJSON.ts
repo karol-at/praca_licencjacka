@@ -44,3 +44,17 @@ export function exportGeoJSON(
     );
   });
 }
+
+export function getTimestamp(date:string): number {
+  return date
+  .replace(' ', 'T')
+  .split('T')[1]
+  .split(':')
+  .map(Number)
+  .reduce((p,c,i) => {
+    if (i == 0) return c * 3600
+    if (i == 1) return c * 60 + p
+    if (i == 2) return c + p
+    return 0
+  })
+}
