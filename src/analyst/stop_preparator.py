@@ -1,7 +1,6 @@
 import config
 import arcpy
-import os
-import env
+import utils
 import pandas
 import zipfile
 from typing import Literal, TypeAlias, TypedDict
@@ -49,6 +48,7 @@ def get_stops(path: str, city: Literal['warsaw', 'gdansk']) -> pandas.DataFrame:
     selection = join[join['route_id'].str.contains(search_pattern)]
     assert isinstance(selection, pandas.DataFrame)
     selection = selection.sort_values(by='arrival_time')
+    selection['arrival_time'] = selection['arrival_time'].map(utils.get_timestamp, na_action='ignore')
     if city == 'warsaw':
         selection = selection.rename(columns={'start_date': 'date'})
     selection = selection[selection['date'] == int(date)]
