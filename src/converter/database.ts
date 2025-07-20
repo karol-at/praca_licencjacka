@@ -3,13 +3,13 @@ import "jsr:@std/dotenv/load";
 import * as WarsawConverterTs from "./WarsawConverter.ts";
 import * as GdanskConverterTs from "./GdanskConverter.ts";
 
-const dir = Deno.env.get("DATABASE") ?? "";
+const dir = Deno.env.get("DIRECTORY") ?? "";
 
-const dbList = Deno.readDir(dir);
+const days = Deno.readDir(dir);
 
 export async function convert(): Promise<void> {
-  for await (const dbFile of dbList) {
-    const dbPath = dir + "/" + dbFile.name;
+  for await (const day of days) {
+    const dbPath = dir + "/" + day.name + '/database.db';
     const db = new DatabaseSync(dbPath);
     const warsawData: WarsawConverterTs.WarsawDataPoint[] = db.prepare(
       `SELECT * FROM warsawData;`,
@@ -24,14 +24,14 @@ export async function convert(): Promise<void> {
     for (const [line, ride] of warsawLines) {
       WarsawConverterTs.transformBusInfo(
         ride,
-        dbFile.name.split(".")[0],
+        day.name,
         Number(line),
       );
     }
     for (const [_line, ride] of gdanskLines){
     GdanskConverterTs.transformBusInfo(
       ride,
-      dbFile.name.split(".")[0],
+      day.name,
     );
   }
   }
