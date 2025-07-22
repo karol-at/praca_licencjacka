@@ -30,6 +30,7 @@ type FilterCriteria = {
   // deno-lint-ignore no-explicit-any
   polygons: any[];
   angles: [(a: number) => boolean, (a: number) => boolean];
+  headsigns: { [key: number]: string };
 };
 
 const criteria: { [key: number]: FilterCriteria } = {
@@ -39,6 +40,10 @@ const criteria: { [key: number]: FilterCriteria } = {
       (x) => x < 0 && x > -90,
       (x) => x < -135 && x > -180 || x < 180 && x > 135,
     ],
+    headsigns: {
+      1: "116 -> Wilanów",
+      2: "116 -> Chomiczówka",
+    },
   },
   731: {
     polygons: [polygons.żerań, polygons.legionowo],
@@ -46,6 +51,10 @@ const criteria: { [key: number]: FilterCriteria } = {
       (x) => x < 0 && x > -90,
       (x) => x < 0 && x > -90,
     ],
+    headsigns: {
+      1: "731 -> Os. Młodych",
+      2: "731 -> Żerań FSO",
+    },
   },
   158: {
     polygons: [polygons.reduta, polygons.witolin],
@@ -53,6 +62,10 @@ const criteria: { [key: number]: FilterCriteria } = {
       (x) => !(x < 0 && x > -135),
       (x) => x < -45 && x > -135,
     ],
+    headsigns: {
+      1: "158 -> Witolin",
+      2: "158 -> CH Reduta",
+    },
   },
 };
 
@@ -90,6 +103,23 @@ export function transformBusInfo(
     rideMap.values().toArray().flat(),
     (item) => item.properties.tripId,
   );
+  for (const [id, ride] of newRideMap) {
+    const angle = Math.atan2(
+      ride[0].geometry.coordinates[0],
+      ride[0].geometry.coordinates[1],
+    ) * 180 / Math.PI;
+    let variant = 2;
+    if (criteria[line].angles[0](angle)) {
+      variant = 1;
+    }
+    newRideMap.set(
+      id,
+      ride.map((e) => {
+        e.properties.headsign = criteria[line].headsigns[variant];
+        return e;
+      }),
+    );
+  }
   exportGeoJSON(newRideMap, today, array[0].Lines);
 }
 
@@ -116,8 +146,8 @@ export function convertToGeoJSON(data: WarsawDataPoint[]): GeoJSON[] {
 }
 
 function convertToUTC(time: string): string {
-  const split = time.split(" ")
-  return split[0] + 'T' + split[1] + "+01:00"
+  const split = time.split(" ");
+  return split[0] + "T" + split[1] + "+01:00";
 }
 
 function reduceData(data: WarsawDataPoint[]): WarsawDataPoint[] {
@@ -156,15 +186,15 @@ function createSplitPoints(
   });
   const points = locations.filter((value) =>
     criteria.angles[0](value.angle) &&
-    booleanPointInPolygon(
-      point([value.Lon, value.Lat]),
-      criteria.polygons[0],
-    ) ||
+      booleanPointInPolygon(
+        point([value.Lon, value.Lat]),
+        criteria.polygons[0],
+      ) ||
     criteria.angles[1](value.angle) &&
-    booleanPointInPolygon(
-      point([value.Lon, value.Lat]),
-      criteria.polygons[1],
-    )
+      booleanPointInPolygon(
+        point([value.Lon, value.Lat]),
+        criteria.polygons[1],
+      )
   );
   for (const item of points) {
     results.push(locations.indexOf(item));

@@ -39,8 +39,13 @@ export function exportGeoJSON(
       type: "FeatureCollection",
       features: value,
     });
+    let headsign;
+    if (typeof value[0].properties.headsign == "string") {
+      headsign = value[0].properties.headsign.replace("[-> ]", "_");
+    }
+    await Deno.mkdir(`${targetDirectory}/${headsign}`);
     await Deno.writeTextFile(
-      `${targetDirectory}/autobus_${key}.geojson`,
+      `${targetDirectory}/${headsign}/autobus_${key}.geojson`,
       geoJSON,
     );
   });
