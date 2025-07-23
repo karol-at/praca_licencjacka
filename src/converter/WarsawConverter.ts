@@ -7,7 +7,9 @@ function truncateData(
   criteria: FilterCriteria,
 ): WarsawDataPoint[] {
   data = reduceData(data);
-  const splitPoints = createSplitPoints(data, criteria);
+  let splitPoints = createSplitPoints(data, criteria);
+  if (splitPoints.length == 1) return [];
+  splitPoints = splitPoints.filter((e, i, a) => e != a[i - 1] + 1);
   return splitData(data, splitPoints).flat();
 }
 
@@ -25,7 +27,7 @@ export type WarsawDataPoint = {
 //criteria for filtering data
 //polygons should contain the starting and ending points of the route
 //angles should contain the minimum and maximum angles for the starting and ending points
-//the elements should be typed in going clockwise on a circle stating from -180 on the bottom
+//the elements should be typed in going counter clockwise on a circle stating from -180 on the left
 type FilterCriteria = {
   // deno-lint-ignore no-explicit-any
   polygons: any[];
@@ -37,8 +39,8 @@ const criteria: { [key: number]: FilterCriteria } = {
   116: {
     polygons: [polygons.chomiczowka, polygons.wilanow],
     angles: [
-      (x) => x < 0 && x > -90,
-      (x) => x < -135 && x > -180 || x < 180 && x > 135,
+      (x) => x < 180 && x > 90,
+      (x) => x < -45 && x > -135,
     ],
     headsigns: {
       1: "116 -> Wilanów",
@@ -48,8 +50,8 @@ const criteria: { [key: number]: FilterCriteria } = {
   731: {
     polygons: [polygons.żerań, polygons.legionowo],
     angles: [
-      (x) => x < 0 && x > -90,
-      (x) => x < 0 && x > -90,
+      (x) => x < 180 && x > 90,
+      (x) => x < -90 && x > -180,
     ],
     headsigns: {
       1: "731 -> Os. Młodych",
@@ -59,8 +61,8 @@ const criteria: { [key: number]: FilterCriteria } = {
   158: {
     polygons: [polygons.reduta, polygons.witolin],
     angles: [
-      (x) => !(x < 0 && x > -135),
-      (x) => x < -45 && x > -135,
+      (x) => x < 90 && x > 0,
+      (x) => !(x < 135 && x > -135),
     ],
     headsigns: {
       1: "158 -> Witolin",
@@ -104,12 +106,16 @@ export function transformBusInfo(
     (item) => item.properties.tripId,
   );
   for (const [id, ride] of newRideMap) {
-    const angle = Math.atan2(
-      ride[0].geometry.coordinates[0],
-      ride[0].geometry.coordinates[1],
-    ) * 180 / Math.PI;
     let variant = 2;
-    if (criteria[line].angles[0](angle)) {
+    if (
+      booleanPointInPolygon(
+        point([
+          ride[0].geometry.coordinates[0],
+          ride[0].geometry.coordinates[1],
+        ]),
+        criteria[line].polygons[0],
+      )
+    ) {
       variant = 1;
     }
     newRideMap.set(
