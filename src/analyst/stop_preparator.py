@@ -3,8 +3,7 @@ import arcpy
 import utils
 import pandas
 import zipfile
-from typing import Literal, TypeAlias, TypedDict
-from utils import sanitize_str
+from typing import Literal
 
 
 arcpy.env.overwriteOutput = True
@@ -90,7 +89,7 @@ def stops_to_features(path: str, city: Literal['warsaw', 'gdansk'], table: panda
     freq_table = arcpy.analysis.Frequency(f'{city}_table', f'{city}_freq', 'trip_headsign')
     result = []
     for line in arcpy.da.SearchCursor(freq_table, 'trip_headsign'):
-        arcpy.analysis.Select(f'{city}_stops', sanitize_str(f'{line[0]}_{city}_stops'), f"trip_headsign = '{line[0]}'")
-        result.append(sanitize_str(f'{line[0]}_{city}_stops'))
+        arcpy.analysis.Select(f'{city}_stops', arcpy.ValidateTableName(line[0]), f"trip_headsign = '{line[0]}'")
+        result.append(arcpy.ValidateTableName(line[0]))
     return result
 
