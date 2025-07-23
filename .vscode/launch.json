@@ -1,0 +1,44 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "experimentalNetworking": "off",
+      "request": "launch",
+      "name": "Convert",
+      "type": "node",
+      "program": "${workspaceFolder}/src/converter/index.ts",
+      "cwd": "${workspaceFolder}",
+      "env": {},
+      "runtimeExecutable": "C:\\Users\\kraol\\.deno\\bin\\deno.EXE",
+      "runtimeArgs": [
+        "run",
+        "--unstable",
+        "--inspect-wait",
+        "--allow-all"
+      ],
+      "attachSimplePort": 9229
+    },
+
+    {
+      "experimentalNetworking": "off",
+      "request": "launch",
+      "name": "Launch Program",
+      "type": "node",
+      "program": "${workspaceFolder}/src/scraper/index.ts",
+      "cwd": "${workspaceFolder}",
+      "env": {},
+      "runtimeExecutable": "C:\\Users\\kraol\\.deno\\bin\\deno.EXE",
+      "runtimeArgs": [
+        "run",
+        "--unstable",
+        "--inspect-wait",
+        "--allow-all",
+        "--env ${workspaceFolder}"
+      ],
+      "attachSimplePort": 9229
+    }
+  ]
+}

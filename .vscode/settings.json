@@ -1,0 +1,15 @@
+{
+  "deno.enable": true,
+  "editor.cursorSmoothCaretAnimation": "off",
+  "editor.cursorStyle": "line",
+  "editor.formatOnPaste": true,
+  "[python]": {
+    "editor.tabSize": 4,
+    "editor.defaultFormatter": "ms-python.autopep8"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "denoland.vscode-deno"
+  },
+  "debugpy.debugJustMyCode": false,
+  "python.languageServer": "Pylance"
+}
