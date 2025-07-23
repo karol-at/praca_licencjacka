@@ -56,14 +56,14 @@ def get_stops(path: str, city: Literal['warsaw', 'gdansk']) -> pandas.DataFrame:
     selection['trip_count'] = selection.groupby('stop_id').cumcount()
     pivoted = selection.pivot_table(
         index=['stop_id', 'stop_lat', 'stop_lon',
-               'stop_name', 'route_short_name', 'trip_headsign'],
+               'stop_name', 'route_short_name', 'trip_headsign', 'stop_sequence'],
         columns='trip_count',
         values=['arrival_time'],
         aggfunc='first'
     )
     print(f'GTFS data processed for {city}')
     pivoted.columns = [f'trip_{i}' for [_, i] in pivoted.columns]
-    pivoted = pivoted.reset_index()
+    pivoted = pivoted.reset_index().sort_values(by=['trip_headsign', 'stop_sequence'])
     return pivoted
 
 
