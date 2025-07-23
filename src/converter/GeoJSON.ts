@@ -64,5 +64,5 @@ export function getTimestamp(date: string): number {
       if (i == 1) return c * 60 + p;
       if (i == 2) return c + p;
       return 0;
-    });
+    }, 0);
 }
