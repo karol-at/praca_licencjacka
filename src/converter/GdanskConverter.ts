@@ -19,7 +19,7 @@ export type GdanskDataPoint = {
 };
 
 function convertToGeoJSON(data: GdanskDataPoint[]): GeoJSON[] {
-  return data.map((point) => {
+  return data.filter((v) => v.scheduledTripStartTime != "null").map((point) => {
     return {
       type: "Feature",
       geometry: {
@@ -50,7 +50,7 @@ function convertToGeoJSON(data: GdanskDataPoint[]): GeoJSON[] {
 export function transformBusInfo(
   array: GdanskDataPoint[],
   today: string,
-): void {
+) {
   if (array.length === 0) return;
   const rideMap = Map.groupBy(
     convertToGeoJSON(array),
