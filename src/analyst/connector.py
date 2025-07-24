@@ -1,5 +1,6 @@
 import arcpy
 import os
+import env
 from utils import sanitize_str
 
 
@@ -16,17 +17,20 @@ def join_line(path: str, layer: str) :
     """
     current_layer_dir = f'{path}\\{sanitize_str(layer)}'
     rides = os.listdir(current_layer_dir)
+    rides_count = len(rides)
     layer = arcpy.ValidateTableName(layer)
     for i, ride in enumerate(rides):
-        json_features = arcpy.conversion.JSONToFeatures(
-            f'{current_layer_dir}\\{ride}', f'{layer}_{i}', 'POINT')
-        
+        try: 
+            json_features = arcpy.conversion.JSONToFeatures(
+                f'{current_layer_dir}\\{ride}', f'{layer}_{i}', 'POINT')
+        except arcpy.ExecuteError as exception:
+            env.errors.append(exception)
+
         # TODO: index scheduled start time, add calculated delay
         arcpy.management.DeleteField(json_features, ['timestamp', 'startTime', 'delay'] if 'startTime' in arcpy.ListFields(
             json_features) else 'timestamp', 'KEEP_FIELDS')
 
         join_layer_name = f'{layer}_j'
-
         arcpy.analysis.SpatialJoin(
             layer, json_features, join_layer_name, 'JOIN_ONE_TO_ONE', 'KEEP_ALL', search_radius='30 Meters', match_option='CLOSEST')
         fields: list[str] = list(map(lambda x: x.baseName,
@@ -50,6 +54,8 @@ def join_line(path: str, layer: str) :
         arcpy.management.Delete(layer)
         arcpy.management.Rename(join_layer_name, layer)
         arcpy.management.DeleteField(layer, 'timestamp')
+        print(f'processed line {layer}, iteration {i} out of {rides_count}', end='\r')
+    print()
     filter_fields = arcpy.ListFields(layer, 'delay_*')
     filter_fields += arcpy.ListFields(layer, 'startTime')
     filter_fields += ['stop_id', 'stop_name', 'stop_sequence', 'route_short_name', 'trip_headsign']
@@ -66,7 +72,7 @@ def calculate_trip_delay(i, join_layer_name, fields):
     for j, row in enumerate(arcpy.da.SearchCursor(join_layer_name, fields)):
         if j != stop_threshold:
             continue
-        if row[1] is None and stop_threshold < 4:
+        if row[-1] is None and stop_threshold < 4:
             stop_threshold += 1
             continue
         trips = list(filter(None, row[1:-1]))
@@ -101,3 +107,13 @@ def get_closest_trip(arr: list[int | float], target: int | float) -> int:
         return left - 1
     return left
 
+
+def export_table(table: str, path: str, trip: str):
+    """
+    Export table as csv file
+    Args:
+        table (str): path to the table in the geodatabase
+        path (str): current daily working directory
+        trip (str): name of the exported trip
+    """
+    arcpy.conversion.ExportTable(table, f'{path}\\{trip}.csv')
