@@ -80,7 +80,7 @@ def stops_to_features(path: str, city: Literal['warsaw', 'gdansk'], table: panda
         city {'warsaw', 'gdansk'}:  the city to be processed
         table (DataFrame): pandas dataframe containing processed GTFS data for a list of bus stops with timetables
     Returns:
-        a list of layer names for specific bus lines
+        a list of headsigns for specific bus lines
     """
     table.to_csv(f'{path}\\{city}.csv')
     arcpy.conversion.ExportTable(
@@ -93,5 +93,5 @@ def stops_to_features(path: str, city: Literal['warsaw', 'gdansk'], table: panda
     for line in arcpy.da.SearchCursor(freq_table, 'trip_headsign'):
         arcpy.analysis.Select(f'{city}_stops', arcpy.ValidateTableName(
             line[0]), f"trip_headsign = '{line[0]}'")
-        result.append(arcpy.ValidateTableName(line[0]))
+        result.append(line[0])
     return result
