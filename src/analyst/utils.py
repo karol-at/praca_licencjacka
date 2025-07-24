@@ -1,4 +1,9 @@
-
+def sanitize_str(string:str) -> str:
+    return\
+    string\
+        .replace(' ', '_')\
+        .replace('-', '_')\
+        .replace('>', '_')
 
 def get_timestamp(time:str) -> int:
     split = time.split(':')
