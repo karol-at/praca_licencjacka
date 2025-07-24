@@ -5,6 +5,7 @@ import env
 import os
 import config
 
+errors = []
 dates = os.listdir(env.path)
 for date in dates:
     for city in config.cities:
@@ -26,5 +27,10 @@ for date in dates:
             processed_lines += sp.stops_to_features(cwd, city, lines[line])
             
         for line in processed_lines:
-            con.join_line(cwd, line)
+            joined_line = con.join_line(cwd, line)
+            con.export_table(joined_line, cwd, line)
+            with open(f'{cwd}\\{line}_errors.txt') as file:
+                file.write(env.errors)
+                env.errors = []
+            print(f'processed line {line}')
             

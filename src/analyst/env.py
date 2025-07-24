@@ -13,3 +13,5 @@ if gtfs == None:
 gtfs = gtfs.replace('/', '\\')
 
 api_key = dotenv.dotenv_values()['APIKEY']
+
+errors = []
