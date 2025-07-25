@@ -6,7 +6,7 @@ from utils import sanitize_str
 
 # TODO: data from stop_preparator => spatial join => calculate results => df/csv
 
-def join_line(path: str, layer: str) :
+def join_line(path: str, layer: str):
     """
     Join data from a line to corresponding bus stops. 
     Args:
@@ -20,11 +20,12 @@ def join_line(path: str, layer: str) :
     rides_count = len(rides)
     layer = arcpy.ValidateTableName(layer)
     for i, ride in enumerate(rides):
-        try: 
+        try:
             json_features = arcpy.conversion.JSONToFeatures(
                 f'{current_layer_dir}\\{ride}', f'{layer}_{i}', 'POINT')
         except arcpy.ExecuteError as exception:
             env.errors.append(exception)
+            continue
 
         # TODO: index scheduled start time, add calculated delay
         arcpy.management.DeleteField(json_features, ['timestamp', 'startTime', 'delay'] if 'startTime' in arcpy.ListFields(
@@ -36,7 +37,7 @@ def join_line(path: str, layer: str) :
         fields: list[str] = list(map(lambda x: x.baseName,
                                      arcpy.ListFields(join_layer_name, 'trip_*'))) + ['timestamp']
 
-        try: 
+        try:
             arcpy.management.AlterField(layer, 'startTime', f'startTime_{i}')
             arcpy.management.AlterField(layer, 'delay', f'delay_ZTM_{i}')
         except:
@@ -52,14 +53,18 @@ def join_line(path: str, layer: str) :
         if null_count <= 3:
             calculate_trip_delay(i, join_layer_name, fields)
         arcpy.management.Delete(layer)
+        arcpy.management.Delete(json_features)
         arcpy.management.Rename(join_layer_name, layer)
         arcpy.management.DeleteField(layer, 'timestamp')
-        print(f'processed line {layer}, iteration {i} out of {rides_count}', end='\r')
+        print(
+            f'processed line {layer}, iteration {i + 1} out of {rides_count}', end='\r')
     print()
-    filter_fields = arcpy.ListFields(layer, 'delay_*')
-    filter_fields += arcpy.ListFields(layer, 'startTime')
-    filter_fields += ['stop_id', 'stop_name', 'stop_sequence', 'route_short_name', 'trip_headsign']
-    filter_table = arcpy.management.DeleteField(layer, filter_fields, method='KEEP_FIELDS')
+    filter_fields = list(map(lambda x: x.baseName,arcpy.ListFields(layer, 'delay_*')))
+    filter_fields += list(map(lambda x: x.baseName, arcpy.ListFields(layer, 'startTime')))
+    filter_fields += ['stop_id', 'stop_name',
+                      'stop_sequence', 'route_short_name', 'trip_headsign']
+    filter_table = arcpy.management.DeleteField(
+        layer, filter_fields, method='KEEP_FIELDS')
     return filter_table
 
 
@@ -116,4 +121,4 @@ def export_table(table: str, path: str, trip: str):
         path (str): current daily working directory
         trip (str): name of the exported trip
     """
-    arcpy.conversion.ExportTable(table, f'{path}\\{trip}.csv')
+    arcpy.conversion.ExportTable(table, f'{path}\\{arcpy.ValidateTableName(trip)}.csv')
