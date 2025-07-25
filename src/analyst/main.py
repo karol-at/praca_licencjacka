@@ -8,19 +8,20 @@ import config
 errors = []
 dates = os.listdir(env.path)
 for date in dates:
+
+    cwd = f'{env.path}\\{date}'
+
+    gdb = arcpy.management.CreateFileGDB(cwd, 'base.gdb')
+
+    arcpy.env.workspace = f'{cwd}\\base.gdb'
+    
     for city in config.cities:
 
         if city not in ['warsaw', 'gdansk']:
             raise ValueError()
-        
-        cwd = f'{env.path}\\{date}'
 
         df = sp.get_stops(f'{env.path}\\{date}\\gtfs\\{city}.zip', city)
         lines = sp.split_lines(df)
-
-        gdb = arcpy.management.CreateFileGDB(cwd, 'base.gdb')
-
-        arcpy.env.workspace = f'{cwd}\\base.gdb'
 
         processed_lines: list[str] = []
         for line in lines:
@@ -30,7 +31,7 @@ for date in dates:
             joined_line = con.join_line(cwd, line)
             con.export_table(joined_line, cwd, line)
             with open(f'{cwd}\\{line}_errors.txt') as file:
-                file.write(env.errors)
+                file.write(str(env.errors))
                 env.errors = []
             print(f'processed line {line}')
             
