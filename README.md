@@ -2,8 +2,7 @@
 
 ## scraper
 
-this directory contains a script for downloading current bus location data for
-specified lines of bus public transport
+A script designed
 
 ### warsaw
 

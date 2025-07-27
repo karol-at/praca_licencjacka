@@ -42,7 +42,8 @@ def get_stops(path: str, city: Literal['warsaw', 'gdansk']) -> pandas.DataFrame:
     join: pandas.DataFrame = stop_times_dataframe.merge(trips_dataframe, how='left', on='trip_id', suffixes=('', '-t'))\
         .merge(routes_dataframe, how='left', left_on='route_id', right_on='route_id', suffixes=('', '-r'))\
         .merge(calendar_dataframe, how='left', left_on='service_id', right_on='service_id', suffixes=('', '-c'))\
-        .merge(stops_dataframe, how='left', on='stop_id', suffixes=('', '-s'))
+        .merge(stops_dataframe, how='left', on='stop_id', suffixes=('', '-s'))\
+        .astype({'route_id': 'str'})
     print(f'GTFS data joined for {date}')
     selection = join[join['route_id'].str.contains(search_pattern)]
     assert isinstance(selection, pandas.DataFrame)
