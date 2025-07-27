@@ -2,16 +2,19 @@ import arcpy
 import stop_preparator as sp
 import connector as con
 import env
-import os
+import pathlib
 import config
 
 errors = []
-dates = os.listdir(env.path)
+dates = env.initial_dir.split(',')
+print(dates)
+
 for date in dates:
 
     cwd = f'{env.path}\\{date}'
-
-    gdb = arcpy.management.CreateFileGDB(cwd, 'base.gdb')
+    
+    if not pathlib.Path(f'{cwd}\\base.gdb').exists():
+        arcpy.management.CreateFileGDB(cwd, 'base.gdb')
 
     arcpy.env.workspace = f'{cwd}\\base.gdb'
     
@@ -30,7 +33,7 @@ for date in dates:
         for line in processed_lines:
             joined_line = con.join_line(cwd, line)
             con.export_table(joined_line, cwd, line)
-            with open(f'{cwd}\\{line}_errors.txt') as file:
+            with open(f'{cwd}\\{arcpy.ValidateTableName(line)}_errors.txt', 'w') as file:
                 file.write(str(env.errors))
                 env.errors = []
             print(f'processed line {line}')
