@@ -1,10 +1,9 @@
 import arcpy
 import os
 import env
+import config
 from utils import sanitize_str
 
-
-# TODO: data from stop_preparator => spatial join => calculate results => df/csv
 
 def join_line(path: str, layer: str):
     """
@@ -15,25 +14,29 @@ def join_line(path: str, layer: str):
     Returns:
         t
     """
-    current_layer_dir = f'{path}\\{sanitize_str(layer)}'
-    rides = os.listdir(current_layer_dir)
+    current_layer_dir = f'{path}\\{sanitize_str(config.route_aliases[layer] if layer in config.route_aliases else layer)}'
+    try:
+        rides = os.listdir(current_layer_dir)
+    except:
+        rides = os.listdir(f'{path}\\{sanitize_str(config.alternative_route_names[layer])}')
+    
     rides_count = len(rides)
     layer = arcpy.ValidateTableName(layer)
     for i, ride in enumerate(rides):
+        
         try:
             json_features = arcpy.conversion.JSONToFeatures(
                 f'{current_layer_dir}\\{ride}', f'{layer}_{i}', 'POINT')
         except arcpy.ExecuteError as exception:
             env.errors.append(exception)
             continue
-
-        # TODO: index scheduled start time, add calculated delay
         arcpy.management.DeleteField(json_features, ['timestamp', 'startTime', 'delay'] if 'startTime' in arcpy.ListFields(
             json_features) else 'timestamp', 'KEEP_FIELDS')
 
         join_layer_name = f'{layer}_j'
         arcpy.analysis.SpatialJoin(
             layer, json_features, join_layer_name, 'JOIN_ONE_TO_ONE', 'KEEP_ALL', search_radius='30 Meters', match_option='CLOSEST')
+        arcpy.management.DeleteField(join_layer_name, ['TARGET_FID', 'Join_Count'])
         fields: list[str] = list(map(lambda x: x.baseName,
                                      arcpy.ListFields(join_layer_name, 'trip_*'))) + ['timestamp']
 
