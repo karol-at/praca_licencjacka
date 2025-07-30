@@ -10,5 +10,6 @@ route_aliases = {
 }
 
 alternative_route_names = {
-    '731 -> Starostwo Powiatowe': '731 -> Os. Młodych' 
+    '731 -> Starostwo Powiatowe': '731 -> Os. Młodych',
+    '158 -> CH  Reduta': '158 -> CH Reduta'
 }
