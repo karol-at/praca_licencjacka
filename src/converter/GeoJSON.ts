@@ -56,6 +56,7 @@ export function getTimestamp(date: string): number {
   assert(date != "null");
   return date
     .replace(" ", "T")
+    .replace("Z", "")
     .split("T")[1]
     .split(":")
     .map(Number)
