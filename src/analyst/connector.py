@@ -18,16 +18,21 @@ def join_line(path: str, layer: str):
     try:
         rides = os.listdir(current_layer_dir)
     except:
-        rides = os.listdir(f'{path}\\{sanitize_str(config.alternative_route_names[layer])}')
-    
+        rides = os.listdir(
+            f'{path}\\{sanitize_str(config.alternative_route_names[layer])}')
+
     rides_count = len(rides)
     layer = arcpy.ValidateTableName(layer)
     for i, ride in enumerate(rides):
-        
+
         try:
             json_features = arcpy.conversion.JSONToFeatures(
                 f'{current_layer_dir}\\{ride}', f'{layer}_{i}', 'POINT')
         except arcpy.ExecuteError as exception:
+            try:
+                arcpy.management.Delete(f'{layer}_{i}')
+            except:
+                pass
             env.errors.append(exception)
             continue
         arcpy.management.DeleteField(json_features, ['timestamp', 'startTime', 'delay'] if 'startTime' in arcpy.ListFields(
@@ -35,8 +40,9 @@ def join_line(path: str, layer: str):
 
         join_layer_name = f'{layer}_j'
         arcpy.analysis.SpatialJoin(
-            layer, json_features, join_layer_name, 'JOIN_ONE_TO_ONE', 'KEEP_ALL', search_radius='30 Meters', match_option='CLOSEST')
-        arcpy.management.DeleteField(join_layer_name, ['TARGET_FID', 'Join_Count'])
+            layer, json_features, join_layer_name, 'JOIN_ONE_TO_ONE', 'KEEP_ALL', search_radius='150 Meters', match_option='CLOSEST')
+        arcpy.management.DeleteField(
+            join_layer_name, ['TARGET_FID', 'Join_Count'])
         fields: list[str] = list(map(lambda x: x.baseName,
                                      arcpy.ListFields(join_layer_name, 'trip_*'))) + ['timestamp']
 
@@ -46,14 +52,14 @@ def join_line(path: str, layer: str):
         except:
             pass
 
-        # drop table if more than three stops didn't find a coresponding bus location
+        # drop table if more than five stops didn't find a coresponding bus location
         null_count = 0
         for row in arcpy.da.SearchCursor(join_layer_name, f'timestamp'):
             if row[0] is None:
                 null_count += 1
-            if null_count > 3:
+            if null_count > 5:
                 break
-        if null_count <= 3:
+        if null_count <= 5:
             calculate_trip_delay(i, join_layer_name, fields)
         arcpy.management.Delete(layer)
         arcpy.management.Delete(json_features)
@@ -62,8 +68,12 @@ def join_line(path: str, layer: str):
         print(
             f'processed line {layer}, iteration {i + 1} out of {rides_count}', end='\r')
     print()
-    filter_fields = list(map(lambda x: x.baseName,arcpy.ListFields(layer, 'delay_*')))
-    filter_fields += list(map(lambda x: x.baseName, arcpy.ListFields(layer, 'startTime')))
+    filter_fields = list(
+        map(lambda x: x.baseName, arcpy.ListFields(layer, 'delay_*')))
+    filter_fields += list(map(lambda x: x.baseName,
+                          arcpy.ListFields(layer, 'startTime*')))
+    filter_fields += list(map(lambda x: x.baseName,
+                          arcpy.ListFields(layer, 'trip_*')))
     filter_fields += ['stop_id', 'stop_name',
                       'stop_sequence', 'route_short_name', 'trip_headsign']
     filter_table = arcpy.management.DeleteField(
@@ -80,7 +90,7 @@ def calculate_trip_delay(i, join_layer_name, fields):
     for j, row in enumerate(arcpy.da.SearchCursor(join_layer_name, fields)):
         if j != stop_threshold:
             continue
-        if row[-1] is None and stop_threshold < 4:
+        if row[-1] is None and stop_threshold <= 5:
             stop_threshold += 1
             continue
         trips = list(filter(None, row[1:-1]))
@@ -124,4 +134,5 @@ def export_table(table: str, path: str, trip: str):
         path (str): current daily working directory
         trip (str): name of the exported trip
     """
-    arcpy.conversion.ExportTable(table, f'{path}\\{arcpy.ValidateTableName(trip)}.csv')
+    arcpy.conversion.ExportTable(
+        table, f'{path}\\{arcpy.ValidateTableName(trip)}.csv')
