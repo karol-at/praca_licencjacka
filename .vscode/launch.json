@@ -7,7 +7,7 @@
     {
       "experimentalNetworking": "off",
       "request": "launch",
-      "name": "Convert",
+      "name": "Debug Convert",
       "type": "node",
       "program": "${workspaceFolder}/src/converter/index.ts",
       "cwd": "${workspaceFolder}",
@@ -17,15 +17,24 @@
         "run",
         "--unstable",
         "--inspect-wait",
-        "--allow-all"
+        "--allow-all",
+        "--env ${workspaceFolder}"
       ],
       "attachSimplePort": 9229
+    },
+    {
+      "name": "Debug Analyst",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/src/analyst/main.py",
+      "console": "integratedTerminal",
+      "args": "'2025-05-27'"
     },
 
     {
       "experimentalNetworking": "off",
       "request": "launch",
-      "name": "Launch Program",
+      "name": "Debug Scraper",
       "type": "node",
       "program": "${workspaceFolder}/src/scraper/index.ts",
       "cwd": "${workspaceFolder}",
