@@ -30,7 +30,7 @@ function convertToGeoJSON(data: GdanskDataPoint[]): GeoJSON[] {
         vehicleNumber: point.vehicleId,
         line: point.routeId,
         routeShortName: point.routeShortName,
-        headsign: point.headsign,
+        headsign: point.routeId + " -> " + point.headsign,
         vechicleCode: point.vechicleCode,
         vechicleService: point.vechicleService,
         speed: point.speed,
