@@ -4,6 +4,7 @@ import connector as con
 import env
 import pathlib
 import config
+import yaml
 
 errors = []
 dates = env.initial_dir.split(',')
@@ -23,18 +24,17 @@ for date in dates:
         if city not in ['warsaw', 'gdansk']:
             raise ValueError()
 
-        df = sp.get_stops(f'{env.path}\\{date}\\gtfs\\{city}.zip', city)
-        lines = sp.split_lines(df)
+        df = sp.load_gtfs(f'{env.path}\\{date}\\gtfs\\{city}.zip', city)
+        lines = sp.split_shapes(df)
 
-        processed_lines: list[str] = []
         for line in lines:
-            processed_lines += sp.stops_to_features(cwd, city, lines[line])
-            
-        for line in processed_lines:
-            joined_line = con.join_line(cwd, line)
-            con.export_table(joined_line, cwd, line)
+            lines[line].load_shapes(cwd)
+            con.join_line(cwd, lines[line])
+            lines[line].export_shapes(cwd)
             with open(f'{cwd}\\{arcpy.ValidateTableName(line)}_errors.txt', 'w') as file:
                 file.write(str(env.errors))
                 env.errors = []
             print(f'processed line {line}')
-            
+        with open(f'{cwd}\\{city}_shape_map.yml', 'w', encoding='utf-8') as file:
+            yml = {line: [shape.validated_id for shape in lines[line].shapes] for line in lines} 
+            yaml.dump(yml, file, allow_unicode=True)
