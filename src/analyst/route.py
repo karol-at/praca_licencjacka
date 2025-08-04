@@ -1,22 +1,34 @@
-from itertools import Iterator
+from typing import Iterator
 from pandas import DataFrame
 from arcpy.conversion import ExportTable
+from arcpy.management import Delete
 from arcpy import XYTableToPoint_management, ValidateTableName
+from os import mkdir, remove
 
 
 class Route():
     def __init__(self, headsign: str, shapes: Iterator):
         self.headsign: str = headsign
-        self.shapes: list[Shape] = [Shape(x) for x in shapes]
+        self.shapes: list[Shape] = [Shape(shape_id)
+                                    for shape_id, headsign in shapes]
         self.validated_headsign = ValidateTableName(headsign)
 
     def load_shapes(self, path: str):
         for shape in self.shapes:
             shape.load_timetable(path)
 
-    def export_shapes(self):
+    def export_shapes(self, path: str):
+        try:
+            mkdir(f'{path}\\delays')
+        except:
+            pass
         for shape in self.shapes:
-            ExportTable(shape.id)
+            ExportTable(shape.validated_id,
+                        f'{path}\\delays\\{shape.validated_id}.csv')
+            try:
+                remove(f'{path}\\delays\\{shape.validated_id}.csv.xml')
+            except:
+                pass
 
 
 class Shape():
@@ -24,6 +36,7 @@ class Shape():
 
     def __init__(self, id: str):
         self.id = id
+        self.validated_id = ValidateTableName(id)
 
     def load_timetable(self, path: str):
         """
@@ -31,7 +44,13 @@ class Shape():
         Args:
             path (str): path to the current daily directory
         """
-        csv_path = f'{path}/timetables/{self.id}.csv'
+        try:
+            mkdir(f'{path}\\timetables')
+        except:
+            pass
+        csv_path = f'{path}\\timetables\\{self.id}.csv'
         self.timetable.to_csv(csv_path)
-        ExportTable(csv_path, f'{self.id}_table')
-        XYTableToPoint_management(f'{self.id}_table', self.id)
+        ExportTable(csv_path, f'{self.validated_id}_table')
+        XYTableToPoint_management(
+            f'{self.validated_id}_table', self.validated_id)
+        Delete(f'{self.validated_id}_table')
