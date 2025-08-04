@@ -39,9 +39,9 @@ function convertToGeoJSON(data: GdanskDataPoint[]): GeoJSON[] {
         gpsQuality: point.gpsQuality,
         tripId: 0,
         time: point.generated,
-        timestamp: getTimestamp(point.generated),
+        timestamp: getTimestamp(point.generated) + 7200,
         startTime: point.scheduledTripStartTime,
-        startTimestamp: getTimestamp(point.scheduledTripStartTime),
+        startTimestamp: getTimestamp(point.scheduledTripStartTime) + 7200,
       },
     };
   });
