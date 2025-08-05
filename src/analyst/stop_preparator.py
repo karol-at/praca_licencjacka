@@ -47,8 +47,12 @@ def load_gtfs(path: str, city: Literal['warsaw', 'gdansk']) -> pandas.DataFrame:
         .merge(stops_dataframe, how='left', on='stop_id', suffixes=('', '-s'))\
         .astype({'route_id': 'str'})
 
-    if city == 'warsaw':
-        join.rename({'start_date': 'date'})
+    del stop_times_dataframe
+    del trips_dataframe
+    del routes_dataframe
+    del calendar_dataframe
+    del stops_dataframe
+    collect()
 
     join = join[join['route_id'].str.contains(search_pattern)]
 
@@ -106,7 +110,9 @@ def getnerate_pivot_table(df: pandas.DataFrame, shape_id: str) -> pandas.DataFra
         dropna=True,
     )
 
-    pivot.columns = [f'trip{i}'for [_, i] in pivot.columns]
+    del shape_df
+
+    pivot.columns = [f'{name}_{i}' for [name, i] in pivot.columns]
     pivot = pivot.reset_index().sort_values(by=['stop_sequence'])
 
     assert isinstance(pivot, pandas.DataFrame)
