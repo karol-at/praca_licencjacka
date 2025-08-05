@@ -27,6 +27,8 @@ for date in dates:
         df = sp.load_gtfs(f'{env.path}\\{date}\\gtfs\\{city}.zip', city)
         lines = sp.split_shapes(df)
 
+        print('GTFS data processed for', city, date)
+
         for line in lines:
             lines[line].load_shapes(cwd)
             con.join_line(cwd, lines[line])
