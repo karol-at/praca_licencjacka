@@ -66,7 +66,7 @@ const criteria: { [key: number]: FilterCriteria } = {
     ],
     headsigns: {
       1: "158 -> Witolin",
-      2: "158 -> CH Reduta",
+      2: "158 -> CH  Reduta",
     },
   },
 };
