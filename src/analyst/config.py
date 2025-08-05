@@ -7,7 +7,9 @@ lines = {
 
 route_aliases = {
     '106 -> Muzeum II Wojny Światowej': '106 -> Muzeum II Wojny',
-    '208 -> Muzeum II Wojny Światowej': '208 -> Muzeum II Wojny'
+    '208 -> Muzeum II Wojny Światowej': '208 -> Muzeum II Wojny',
+    '158 -> Dw. Centralny': '158 -> CH  Reduta',
+    '731 -> Starostwo Powiatowe': '731 -> Os. Młodych'
 }
 
 nonexistent_routes = {'106 -> Jana Z Kolna'}
