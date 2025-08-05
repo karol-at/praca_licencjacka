@@ -96,7 +96,7 @@ def join_line(path: str, route: Route):
         # Continue to next loop iteration if no good match
         if smallest_delay_shape_id is None:
             print(
-                f'processed line {route.headsign}, iteration {i + 1} out of {rides_count}', end='\r')
+                f'processing line {route.headsign}, iteration {i + 1} out of {rides_count}', end='\r')
             arcpy.management.Delete(json_features)
             continue
 
@@ -120,7 +120,7 @@ def join_line(path: str, route: Route):
         except:
             pass
         print(
-            f'processed line {route.headsign}, iteration {i + 1} out of {rides_count}', end='\r')
+            f'processing line {route.headsign}, iteration {i + 1} out of {rides_count}', end='\r')
     print()
 
 
