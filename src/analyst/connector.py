@@ -42,7 +42,7 @@ def join_line(path: str, route: Route):
         )
 
         analysis_fields = ['timestamp', 'startTime',
-                           'delay', 'startTimestamp'] if 'startTime' in field_names_list else 'timestamp'
+                           'delay', 'startTimestamp'] if 'delay' in field_names_list else 'timestamp'
 
         arcpy.management.DeleteField(
             json_features, analysis_fields, 'KEEP_FIELDS')
@@ -142,7 +142,7 @@ def calculate_trip_delay(join_layer_name: str) -> tuple[int, int]:
         if row[-1] is None and stop_threshold <= 5:
             stop_threshold += 1
             continue
-        trips = list(filter(None, row[1:]))
+        trips = list(filter(None, row[:-1]))
         timestamp = row[-1]
         trip_id = get_closest_trip(trips, timestamp)
         return (trip_id, abs(trips[trip_id] - timestamp))
