@@ -27,19 +27,19 @@ def load_gtfs(path: str, city: Literal['warsaw', 'gdansk']) -> pandas.DataFrame:
     with zipfile.ZipFile(path) as zip_file:
         with zip_file.open('stop_times.txt') as stop_times:
             stop_times_dataframe: pandas.DataFrame = pandas.read_csv(
-                stop_times)  # type: ignore
+                stop_times)
         with zip_file.open('stops.txt') as stops:
             stops_dataframe: pandas.DataFrame = pandas.read_csv(
-                stops)  # type: ignore
+                stops)
         with zip_file.open('trips.txt') as trips:
             trips_dataframe: pandas.DataFrame = pandas.read_csv(
-                trips)  # type: ignore
+                trips)
         with zip_file.open('routes.txt') as routes:
             routes_dataframe: pandas.DataFrame = pandas.read_csv(
-                routes)  # type: ignore
+                routes)
         with zip_file.open('calendar.txt' if 'warsaw' == city else 'calendar_dates.txt') as calendar:
             calendar_dataframe: pandas.DataFrame = pandas.read_csv(
-                calendar)  # type: ignore
+                calendar)
 
     join = stop_times_dataframe.merge(trips_dataframe, how='left', on='trip_id', suffixes=('', '-t'))\
         .merge(routes_dataframe, how='left', left_on='route_id', right_on='route_id', suffixes=('', '-r'))\
