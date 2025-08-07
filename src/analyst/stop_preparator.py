@@ -6,6 +6,7 @@ import zipfile
 from typing import Literal
 from route import Route
 from itertools import groupby
+from gc import collect
 
 
 arcpy.env.overwriteOutput = True
@@ -22,7 +23,7 @@ def load_gtfs(path: str, city: Literal['warsaw', 'gdansk']) -> pandas.DataFrame:
     """
 
     search_pattern = "|".join([str(line) for line in config.lines[city]])
-    date = path.split('\\')[-3].replace('-', '')
+    date = int(path.split('\\')[-3].replace('-', ''))
 
     with zipfile.ZipFile(path) as zip_file:
         with zip_file.open('stop_times.txt') as stop_times:
@@ -70,8 +71,10 @@ def load_gtfs(path: str, city: Literal['warsaw', 'gdansk']) -> pandas.DataFrame:
     join = join.sort_values(by='arrival_time')
     join['arrival_time'] = join['arrival_time'].map(
         utils.get_timestamp, na_action='ignore')
-    join['trip_headsign'] = join[['trip_headsign', 'route_id']].apply(
-        lambda x: f'{x[1]} -> {x[0]}', axis=1, raw=True)
+    if city == 'gdansk':
+        join['trip_headsign'] = join[['trip_headsign', 'route_id']].apply(
+            lambda x: f'{x[1]} -> {x[0]}', axis=1, raw=True)
+    join.to_csv('\\'.join(path.split('\\')[:-1]) + f'\\{city}_join_table.csv')
     return join
 
 
@@ -87,7 +90,8 @@ def split_shapes(df: pandas.DataFrame) -> dict[str, Route]:
     shapes = sorted(shapes.to_numpy().tolist(), key=lambda x: x[1])
 
     groups = groupby(shapes, lambda x: x[1])
-    lines: dict[str, Route] = {key: Route(key, value) for key, value in groups}
+    lines: dict[str, Route] = {key: Route(
+        key, value) for key, value in groups if key not in config.nonexistent_routes}
 
     for line in lines:
         for shape in lines[line].shapes:
@@ -104,14 +108,14 @@ def getnerate_pivot_table(df: pandas.DataFrame, shape_id: str) -> pandas.DataFra
         shape_id (str): an id for he shape for which the timetable will be generated
     """
 
-    shape_df = df[df['shape_id'] == shape_id]
+    shape_df = df[df['shape_id'] == shape_id].copy()
     shape_df['trip_count'] = shape_df.groupby('stop_sequence').cumcount()
 
     pivot = shape_df.pivot_table(
         index=['stop_id', 'stop_lat', 'stop_lon',
                'stop_name', 'route_short_name', 'trip_headsign', 'stop_sequence'],
         columns='trip_count',
-        values=['arrival_time'],
+        values=['arrival_time', 'departure_time'],
         aggfunc='first',
         dropna=True,
     )
