@@ -13,12 +13,12 @@ print(dates)
 for date in dates:
 
     cwd = f'{env.path}\\{date}'
-    
+
     if not pathlib.Path(f'{cwd}\\base.gdb').exists():
         arcpy.management.CreateFileGDB(cwd, 'base.gdb')
 
     arcpy.env.workspace = f'{cwd}\\base.gdb'
-    
+
     for city in config.cities:
 
         if city not in ['warsaw', 'gdansk']:
@@ -38,5 +38,6 @@ for date in dates:
                 env.errors = []
             print(f'processed line {line}')
         with open(f'{cwd}\\{city}_shape_map.yml', 'w', encoding='utf-8') as file:
-            yml = {line: [shape.validated_id for shape in lines[line].shapes] for line in lines} 
+            yml = {line: [shape.validated_id for shape in lines[line].shapes]
+                   for line in lines}
             yaml.dump(yml, file, allow_unicode=True)
