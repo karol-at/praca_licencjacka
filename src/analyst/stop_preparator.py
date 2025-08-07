@@ -58,6 +58,11 @@ def load_gtfs(path: str, city: Literal['warsaw', 'gdansk']) -> pandas.DataFrame:
 
     assert isinstance(join, pandas.DataFrame)
 
+    if city == 'warsaw':
+        join = join.rename(columns={'start_date': 'date'})
+        join['trip_headsign'] == join['trip_headsign'].map(
+            lambda x: x if x not in config.route_aliases else config.route_aliases[x])
+
     join = join[join['date'] == date]
 
     assert isinstance(join, pandas.DataFrame)
@@ -77,8 +82,9 @@ def split_shapes(df: pandas.DataFrame) -> dict[str, Route]:
         df (DataFrame): a DataFrame containing merged GTFS Schedule data for a given day and select routes. A result of _load_gtfs_
     """
 
-    shapes = df[['shape_id', 'trip_headsign']].drop_duplicates().apply(
-        lambda x: [x[0], x[1]], axis=1, raw=True)
+    shapes = df[['shape_id', 'trip_headsign']].drop_duplicates()
+
+    shapes = sorted(shapes.to_numpy().tolist(), key=lambda x: x[1])
 
     groups = groupby(shapes, lambda x: x[1])
     lines: dict[str, Route] = {key: Route(key, value) for key, value in groups}
