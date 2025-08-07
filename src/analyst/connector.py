@@ -19,8 +19,11 @@ def join_line(path: str, route: Route):
     """
 
     current_layer_dir = f'{path}\\{sanitize_str(config.route_aliases[route.headsign] if route.headsign in config.route_aliases else route.headsign)}'
-
-    rides = os.listdir(current_layer_dir)
+    try:
+        rides = os.listdir(current_layer_dir)
+    except FileNotFoundError as e:
+        print('bus location data for line', route.headsign, 'not found')
+        return
 
     rides_count = len(rides)
     for i, ride in enumerate(rides):
