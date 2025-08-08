@@ -5,8 +5,9 @@ import arcpy
 from zipfile import ZipFile
 from typing import Literal
 from functools import reduce
-from pandas import read_csv
+from pandas import read_csv, Series
 from statistics import mean
+from datetime import date
 
 PATH = dotenv.dotenv_values()['DIRECTORY']
 assert PATH is not None
@@ -85,7 +86,8 @@ def count_stops(city: cities):
                     lambda x: f'{shape[1:]}.csv' in timetables[x], timetables)
             )[0]
 
-            s = read_csv(f'{PATH}/{date}/timetables/{shape[1:]}.csv')['stop_id'].tolist()
+            s = read_csv(
+                f'{PATH}/{date}/timetables/{shape[1:]}.csv')['stop_id'].tolist()
             routes[route_short_name] = s if route_short_name not in routes else s + \
                 routes[route_short_name]
 
@@ -95,6 +97,29 @@ def count_stops(city: cities):
     with open(f'{RESULT_PATH}/{city}_stop_count.yml', 'w', encoding='utf-8') as file:
         yaml.dump(result, file, encoding='utf-8')
 
+
+def count_trips(city: cities):
+    with open(f'{RESULT_PATH}/{city}_shape_summary.yml', encoding='utf-8') as file:
+        shapes = yaml.safe_load(file)
+    assert isinstance(shapes, dict)
+
+    lines = {x[:3] for x in shapes}
+
+    trip_counter: dict[str, list] = {line: [] for line in lines}
+
+    for dir in dirs:
+        weekend = date(int(dir[:4]), int(dir[5:7]), int(dir[8:10])).weekday() > 4
+        df = read_csv(f'{PATH}/{dir}/gtfs/{city}_join_table.csv')
+        for line in lines: 
+            trips = df[df['route_short_name'] == int(line)]['trip_id']
+            assert isinstance(trips, Series)
+            trips_count = len(trips.drop_duplicates())
+            trip_counter[line] += [trips_count]
+
+    trip_counter = {line: mean(trip_counter[line]) for line in trip_counter}
+
+    with open(f'{RESULT_PATH}/{city}_trip_count.yml', 'w', encoding='utf-8') as file:
+        yaml.dump(trip_counter, file, encoding='utf-8')
 
 def get_shape_length(path: str, city: Literal['warsaw', 'gdansk'], shape_id: str, shortname: str):
     """
@@ -135,3 +160,6 @@ def get_shape_length(path: str, city: Literal['warsaw', 'gdansk'], shape_id: str
         feature_id, [['LEN', 'LENGTH_GEODESIC']], 'KILOMETERS')
     for row in arcpy.da.SearchCursor(feature_id, ['LEN']):
         return row[0]
+
+
+count_trips('warsaw')
