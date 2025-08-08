@@ -16,6 +16,7 @@ assert RESULT_PATH is not None
 WINDOWS_RESULT_PATH = RESULT_PATH.replace('/', '\\')
 
 dirs = os.listdir(PATH)
+cities = Literal['warsaw', 'gdansk']
 
 
 def generate_shape_summary(city: Literal['warsaw', 'gdansk']):
@@ -33,7 +34,7 @@ def merge_dictionaries(dict1: dict, dict2: dict):
     return {k: dict1.get(k, no) + dict2.get(k, no) for k in keys}
 
 
-def calculate_shape_lengths(city: Literal['warsaw', 'gdansk']):
+def calculate_shape_lengths(city: cities):
     with open(f'{RESULT_PATH}/{city}_shape_summary.yml', encoding='utf-8') as file:
         shapes = yaml.safe_load(file)
     assert isinstance(shapes, dict)
@@ -66,6 +67,33 @@ def calculate_shape_lengths(city: Literal['warsaw', 'gdansk']):
     routes = {route: mean(routes[route]) for route in routes}
     with open(f'{RESULT_PATH}/{city}_shape_averages.yml', 'w', encoding='utf-8') as file:
         yaml.dump(routes, file, encoding='utf-8')
+
+
+def count_stops(city: cities):
+    with open(f'{RESULT_PATH}/{city}_shape_summary.yml', encoding='utf-8') as file:
+        shapes = yaml.safe_load(file)
+    assert isinstance(shapes, dict)
+    timetables = {x: os.listdir(f'{PATH}/{x}/timetables') for x in dirs}
+    routes: dict[str, list] = {}
+
+    for headsign in shapes:
+        route_short_name: str = headsign[:3]
+        assert isinstance(headsign, str)
+        for shape in shapes[headsign]:
+            date: str | int = list(
+                filter(
+                    lambda x: f'{shape[1:]}.csv' in timetables[x], timetables)
+            )[0]
+
+            s = read_csv(f'{PATH}/{date}/timetables/{shape[1:]}.csv')['stop_id'].tolist()
+            routes[route_short_name] = s if route_short_name not in routes else s + \
+                routes[route_short_name]
+
+    routes = {k: list(set(routes[k])) for k in routes}
+    result = {
+        k: {'length': len(routes[k]), 'stops': routes[k]} for k in routes}
+    with open(f'{RESULT_PATH}/{city}_stop_count.yml', 'w', encoding='utf-8') as file:
+        yaml.dump(result, file, encoding='utf-8')
 
 
 def get_shape_length(path: str, city: Literal['warsaw', 'gdansk'], shape_id: str, shortname: str):
