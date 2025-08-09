@@ -105,21 +105,30 @@ def count_trips(city: cities):
 
     lines = {x[:3] for x in shapes}
 
-    trip_counter: dict[str, list] = {line: [] for line in lines}
+    trip_counter: dict[str, list] = {line: [] for line in list(
+        lines) + [f'{x}_weekend' for x in lines]}
 
     for dir in dirs:
-        weekend = date(int(dir[:4]), int(dir[5:7]), int(dir[8:10])).weekday() > 4
+        weekend = date(int(dir[:4]), int(dir[5:7]),
+                       int(dir[8:10])).weekday() > 4
+        if dir in ['2025-06-19', '2025-06-20']:
+            weekend = True
         df = read_csv(f'{PATH}/{dir}/gtfs/{city}_join_table.csv')
-        for line in lines: 
+        for line in lines:
             trips = df[df['route_short_name'] == int(line)]['trip_id']
             assert isinstance(trips, Series)
             trips_count = len(trips.drop_duplicates())
-            trip_counter[line] += [trips_count]
+            if weekend:
+                trip_counter[f'{line}_weekend'] += [trips_count]
+            else:
+                trip_counter[line] += [trips_count]
 
-    trip_counter = {line: mean(trip_counter[line]) for line in trip_counter}
+    result = {line: {'mean': mean(
+        trip_counter[line]), 'trip_counts': trip_counter[line]} for line in trip_counter}
 
     with open(f'{RESULT_PATH}/{city}_trip_count.yml', 'w', encoding='utf-8') as file:
-        yaml.dump(trip_counter, file, encoding='utf-8')
+        yaml.dump(result, file, encoding='utf-8')
+
 
 def get_shape_length(path: str, city: Literal['warsaw', 'gdansk'], shape_id: str, shortname: str):
     """
@@ -160,6 +169,3 @@ def get_shape_length(path: str, city: Literal['warsaw', 'gdansk'], shape_id: str
         feature_id, [['LEN', 'LENGTH_GEODESIC']], 'KILOMETERS')
     for row in arcpy.da.SearchCursor(feature_id, ['LEN']):
         return row[0]
-
-
-count_trips('warsaw')
