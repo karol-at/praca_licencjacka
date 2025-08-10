@@ -2,58 +2,133 @@ import pandas
 import numpy
 import os
 import dotenv
+import pathlib
+import yaml
+import arcpy
+from functools import reduce
+from datetime import date
+from pathvalidate import sanitize_filepath
+
 
 PATH = dotenv.dotenv_values()['DIRECTORY']
-if PATH == None:
-    raise ValueError('DIRECTORY not defined in .env')
+assert PATH is not None
+RESULT_PATH = dotenv.dotenv_values()['RESULT']
+assert RESULT_PATH is not None
 
-dates = os.listdir(PATH)
-lines_dataframes: dict[str, list[pandas.DataFrame]] = {}
 
-for date in dates:
-    lines = filter(lambda x: '.csv' in x and x not in [
-                   'warsaw.csv', 'gdansk.csv'], os.listdir(PATH + '\\' + date))
+dirs = os.listdir(PATH)
+dirs: list[str] = list(
+    filter(lambda x: pathlib.Path(f'{PATH}/{x}').is_dir(), dirs))
+
+
+def calculate_delay_averages(weekend: bool | None = None):
+    if weekend:
+        dates: list[str] = [d for d in dirs if date(
+            int(d[0:4]), int(d[5:7]), int(d[8:10])).weekday() > 4
+            or d in ['2025-06-19', '2025-06-20']]
+    elif weekend == False:
+        dates: list[str] = [d for d in dirs if date(
+            int(d[0:4]), int(d[5:7]), int(d[8:10])).weekday() < 5
+            and d not in ['2025-06-19', '2025-06-20']]
+    else:
+        dates = dirs
+    averages_list: list[dict[str, pandas.DataFrame]] = [
+        sum_directory_tables(d) for d in dates]
+    averages_dict: dict[str, list[pandas.DataFrame]] = {}
+
+    for d in averages_list:
+        for k in d:
+            averages_dict[k] = [
+                d[k]] if k not in averages_dict else averages_dict[k] + [d[k]]
+
+    averages: dict[str, pandas.DataFrame] = {
+        k: reduce(lambda x, y: (0, x[1].merge(y[1][['stop_id', 'average']], on='stop_id',
+                  how='outer', suffixes=("", f"_{y[0]}"))), enumerate(averages_dict[k]))[1]
+        for k in averages_dict
+    }
+
+    # TODO: zrobić jeszcze pod weekendy
+
+    suffix_dict = {
+        True: '_weekend',
+        False: '_weekday',
+        None: ''
+    }
+
+    save_directory = sanitize_filepath(
+        f'{RESULT_PATH}/avg_delays{suffix_dict[weekend]}', platform='windows')
+
+    try:
+        os.mkdir(save_directory)
+    except:
+        pass
+    try:
+        arcpy.management.CreateFileGDB(
+            save_directory, 'delays.gdb')
+    except:
+        pass
+    arcpy.env.workspace = f'{save_directory}\\delays.gdb'
+    arcpy.env.overwriteOutput = True
+    for k in averages:
+        columns: list[str] = [c for c in averages[k].columns if 'average' in c]
+        index = averages[k][['stop_id', 'stop_lat',
+                             'stop_lon', 'stop_name']].copy()
+        assert isinstance(index, pandas.DataFrame)
+        index['avg'] = averages[k][columns].apply(numpy.average, axis=1)
+        index[['stop_lat', 'stop_lon']] = index[['stop_lat', 'stop_lon']].map(
+            lambda x: x.replace(',', '.') if isinstance(x, str) else x)
+
+        csv_path = sanitize_filepath(
+            f'{save_directory}/{k}.csv', platform='windows')
+        index.to_csv(csv_path)
+        layer_name = arcpy.ValidateTableName(k)
+        table_name = layer_name + '_table'
+        arcpy.conversion.ExportTable(csv_path, table_name)
+        arcpy.management.XYTableToPoint(
+            table_name, layer_name, 'stop_lon', 'stop_lat')
+        arcpy.management.Delete(table_name)
+
+
+def sum_directory_tables(date: str) -> dict[str, pandas.DataFrame]:
+    with open(f'{PATH}/{date}/warsaw_shape_map.yml', encoding='utf-8') as file:
+        warsaw_shapes = yaml.safe_load(file)
+    with open(f'{PATH}/{date}/gdansk_shape_map.yml', encoding='utf-8') as file:
+        gdansk_shapes = yaml.safe_load(file)
+
+    assert isinstance(warsaw_shapes, dict)
+    assert isinstance(gdansk_shapes, dict)
+
+    lines: dict[str, list] = {}
+    lines_dataframes: dict[str, pandas.DataFrame] = {}
+
+    for line in gdansk_shapes:
+        lines[line] = gdansk_shapes[line]
+    for line in warsaw_shapes:
+        lines[line] = warsaw_shapes[line]
+
     for line in lines:
-        df = pandas.read_csv(fr'{PATH}\{date}\{line}', delimiter=';')
-        columns: list[str] = list(
-            filter(lambda x: 'delay_' in x and 'delay_ZTM' not in x, df.columns))
-        index_columns = list(filter(lambda x: x in ['stop_id', 'stop_name',
-                         'stop_sequence', 'route_short_name', 'trip_headsign'], df.columns.tolist()))
+        dataframes: list[pandas.DataFrame] = [pandas.read_csv(
+            f'{PATH}/{date}/delays/{shape}.csv', delimiter=';') for shape in lines[line]]
+        for i, df in enumerate(dataframes):
+            columns: list[str] = ['stop_id',
+                                  'stop_lat', 'stop_lon', 'stop_name']
+            columns += [c for c in df.columns if 'delay_' in c and 'delay_ZTM' not in c]
+            selection = df[columns]
+            assert isinstance(selection, pandas.DataFrame)
+            replacement_columns = {c: f'{c}_{i}' for c in columns}
+            dataframes[i] = selection
+
+        df: pandas.DataFrame = reduce(lambda x, y: x.merge(
+            y, on=['stop_id', 'stop_lat', 'stop_lon', 'stop_name'], how='outer'), dataframes)
+        df = df.fillna(0)
+        columns = [c for c in df.columns if 'delay_' in c]
         if len(columns) == 0:
             continue
-
-        reduced = df[columns].apply(numpy.average, axis=1)
-        index_df = df[index_columns].copy()
-
-        assert isinstance(index_df, pandas.DataFrame)
-
-        index_df['delay_avg'] = reduced
-
-        try:
-            lines_dataframes[line].append(index_df)
-        except KeyError as _e:
-            lines_dataframes[line] = [index_df]
-    print('reduced data for' + date)
-    
-
-
-for line in lines_dataframes.keys():
-    index_df = lines_dataframes[line][0][['stop_id', 'stop_name',
-                                          'stop_sequence', 'route_short_name', 'trip_headsign']]
-    for i, series in enumerate(lines_dataframes[line]):
-        index_df = index_df.merge(series, how='left',
-                       left_on='stop_id', right_on='stop_id', suffixes=('', '_r'))
-        merge_columns = tuple(filter(lambda x: '_r' not in x, index_df.columns))
-        index_df = index_df[merge_columns]
-
-    work_df = index_df[['stop_id', 'stop_name',
-                        'stop_sequence', 'route_short_name', 'trip_headsign']]
-
-    assert isinstance(work_df, pandas.DataFrame)
-    
-    delay_fields = tuple(filter(lambda x: 'delay' in x, index_df.columns))
-
-    work_df['delay_avg'] = work_df.apply(numpy.average, axis=1) 
-
-    # wykombinować jak to zrobić, skąd wziąć kolumny do indeksowania najłatwiej
-    work_df.to_csv(f'{PATH}\\{line}.csv')
+        avg = df[columns].apply(numpy.average, axis=1)
+        index = df[['stop_id', 'stop_lat', 'stop_lon', 'stop_name']]
+        assert isinstance(avg, pandas.Series)\
+            and isinstance(index, pandas.DataFrame)
+        df = index
+        df['average'] = avg
+        lines_dataframes[line] = df
+    return lines_dataframes
