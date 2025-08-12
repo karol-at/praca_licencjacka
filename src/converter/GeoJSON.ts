@@ -61,7 +61,7 @@ export function getTimestamp(date: string): number {
     .split(":")
     .map(Number)
     .reduce((p, c, i) => {
-      if (i == 0) return c * 3600;
+      if (i == 0) return c === 0 ? 86400 : c * 3600;
       if (i == 1) return c * 60 + p;
       if (i == 2) return c + p;
       return 0;
