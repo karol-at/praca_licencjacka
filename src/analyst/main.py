@@ -5,6 +5,7 @@ import env
 import pathlib
 import config
 import yaml
+from clean_tables import clean_tables
 
 errors = []
 dates = env.initial_dir.split(',')
@@ -37,7 +38,10 @@ for date in dates:
                 file.write(str(env.errors))
                 env.errors = []
             print(f'processed line {line}')
+
+        shape_map = {line: [shape.validated_id for shape in lines[line].shapes]
+                     for line in lines}
+        yml = clean_tables(cwd, shape_map, city)
+
         with open(f'{cwd}\\{city}_shape_map.yml', 'w', encoding='utf-8') as file:
-            yml = {line: [shape.validated_id for shape in lines[line].shapes]
-                   for line in lines}
             yaml.dump(yml, file, allow_unicode=True)
