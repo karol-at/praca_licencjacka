@@ -19,14 +19,14 @@ class Route():
 
     def export_shapes(self, path: str):
         try:
-            mkdir(f'{path}\\delays')
+            mkdir(f'{path}\\delays_raw')
         except:
             pass
         for shape in self.shapes:
             ExportTable(shape.validated_id,
-                        f'{path}\\delays\\{shape.validated_id}.csv')
+                        f'{path}\\delays_raw\\{shape.validated_id}.csv')
             try:
-                remove(f'{path}\\delays\\{shape.validated_id}.csv.xml')
+                remove(f'{path}\\delays_raw\\{shape.validated_id}.csv.xml')
             except:
                 pass
 
