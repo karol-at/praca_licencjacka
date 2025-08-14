@@ -67,7 +67,7 @@ def join_line(path: str, route: Route):
                 join_layer_name,
                 'JOIN_ONE_TO_ONE',
                 'KEEP_ALL',
-                search_radius='150 Meters',
+                search_radius='250 Meters',
                 match_option='CLOSEST'
             )
 
@@ -77,7 +77,7 @@ def join_line(path: str, route: Route):
             for row in arcpy.da.SearchCursor(join_layer_name, f'timestamp'):
                 if row[0] is None:
                     null_count += 1
-                if null_count > 5:
+                if null_count > 8:
                     incorrect_shapes += [shape.validated_id]
                     bad_match = True
                     break
@@ -142,7 +142,7 @@ def calculate_trip_delay(join_layer_name: str) -> tuple[int, int]:
     for j, row in enumerate(arcpy.da.SearchCursor(join_layer_name, fields)):
         if j != stop_threshold:
             continue
-        if row[-1] is None and stop_threshold <= 5:
+        if row[-1] is None and stop_threshold <= 8:
             stop_threshold += 1
             continue
         trips = list(filter(None, row[:-1]))
