@@ -37,17 +37,7 @@ def calculate_accuracy():
     delay_series_list_nofirstlast: list[pandas.Series] = []
     delay_mismatch = 0
 
-    accuracy_summary = {
-        'gdansk': {
-            'shape_mismatch': 0,
-            'repeated_travel': 0,
-            'descending': 0
-        },
-        'warsaw': {
-            'shape_mismatch': 0,
-            'repeated_travel': 0,
-            'descending': 0
-        }
+    accuracy_summary: dict[str, dict[str, int]] = {
     }
 
     for dir in dirs:
@@ -57,10 +47,17 @@ def calculate_accuracy():
         shapes = []
         for k in gdansk_shape_map:
             shapes += gdansk_shape_map[k]
+            line_id = k[:3]
+            if line_id not in accuracy_summary:
+                accuracy_summary[line_id] = {
+                    'shape_mismatch': 0,
+                    'repeated_travel': 0,
+                    'descending': 0
+                }
             for shape in gdansk_shape_map[k]:
                 for shape_id in shape:
-                    for stats in shape[shape_id]:
-                        accuracy_summary['gdansk'][stats] += shape[shape_id][stats]
+                    for stat in shape[shape_id]:
+                        accuracy_summary[line_id][stat] += shape[shape_id][stat]
 
         for shape in shapes:
             if isinstance(shape, dict):
@@ -89,10 +86,17 @@ def calculate_accuracy():
         assert isinstance(warsaw_shape_map, dict)
 
         for line in warsaw_shape_map:
+            line_id = line[:3]
+            if line_id not in accuracy_summary:
+                accuracy_summary[line_id] = {
+                    'shape_mismatch': 0,
+                    'repeated_travel': 0,
+                    'descending': 0
+                }
             for shape in warsaw_shape_map[line]:
                 for shape_id in shape:
-                    for stats in shape[shape_id]:
-                        accuracy_summary['warsaw'][stats] += shape[shape_id][stats]
+                    for stat in shape[shape_id]:
+                        accuracy_summary[line_id][stat] += shape[shape_id][stat]
 
     delay_series = pandas.concat(delay_series_list)
     delay_series_nofirstlast = pandas.concat(delay_series_list_nofirstlast)
