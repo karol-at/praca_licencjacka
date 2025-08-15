@@ -3,6 +3,7 @@ from typing import Literal
 from collections.abc import Iterable
 import os
 import yaml
+from utils import get_closest_trip
 
 
 class DelayMap():
@@ -44,21 +45,26 @@ def clean_table(df: pandas.DataFrame, city: Literal['warsaw', 'gdansk']) -> tupl
     delays = df.filter(regex=r'delay_\d')
     correct_columns: list[str] = []
     dm = DelayMap()
+    column_replace_map: dict[str, str] = {}
     for column in delays:
-        selected_column = delays[column][:-1]
+        selected_column = delays[column]
+        selected_column_slice = selected_column[:-1]
         column_index = column[6:]
         timestamp_column = df[f'timestamp_{column_index}']
-        assert isinstance(selected_column, pandas.Series)
+        assert isinstance(selected_column_slice, pandas.Series)
         assert isinstance(timestamp_column, pandas.Series)
-        if get_max_difference(selected_column) > 900:
+        assert isinstance(selected_column, pandas.Series)
+        if get_max_difference(selected_column_slice) > 900:
             dm.repeated_travel += 1
             continue
         if is_descending(timestamp_column):
             dm.descending += 1
             continue
-        if selected_column.max() > 1800 or selected_column.min() < -1800:
+        if selected_column_slice.max() > 1800 or selected_column_slice.min() < -1800:
             dm.shape_mismatch += 1
             continue
+        match_trip_start_time = match_trip(df, timestamp_column)
+        column_replace_map[column] = f'{column}_{match_trip_start_time}'
         correct_columns += [column]
     final_columns: list[str] = ['stop_id', 'stop_lat', 'stop_lon',
                                 'stop_name', 'route_short_name', 'trip_headsign', 'stop_sequence',]
@@ -77,6 +83,7 @@ def clean_table(df: pandas.DataFrame, city: Literal['warsaw', 'gdansk']) -> tupl
         ]
     final_df = df[final_columns].copy()
     assert isinstance(final_df, pandas.DataFrame)
+    final_df = final_df.rename(columns=column_replace_map)
 
     return final_df, dm
 
@@ -101,4 +108,15 @@ def is_descending(l: Iterable) -> bool:
         if threshold == 0:
             return True
     return False
+
+
+def match_trip(df: pandas.DataFrame, column: pandas.Series) -> str:
+    i = 1
+    while (pandas.isna(column[i])):
+        i += 1
+    arrivals_df = df.filter(regex='arrival_time_.')
+    arrivals: pandas.Series = arrivals_df.iloc[i]
+    start_time_index = get_closest_trip(list(arrivals), int(column[i]))
+    start_time: int = arrivals.iloc[start_time_index]
+    return str(start_time)
 
