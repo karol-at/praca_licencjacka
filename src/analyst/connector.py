@@ -3,7 +3,7 @@ import arcpy
 import os
 import env
 import config
-from utils import sanitize_str
+from utils import sanitize_str, get_closest_trip
 from route import Route
 
 
@@ -152,29 +152,6 @@ def calculate_trip_delay(join_layer_name: str) -> tuple[int, int]:
     raise ValueError('not null row not found in table under defined threshold')
 
 
-def get_closest_trip(arr: list[int | float], target: int | float) -> int:
-    """
-    Returns the index of the value in arr closest to target.
-    Assumes arr is sorted in ascending order.
-    """
-    left, right = 0, len(arr) - 1
-    if target <= arr[left]:
-        return left
-    if target >= arr[right]:
-        return right
-
-    while left < right:
-        mid = (left + right) // 2
-        if arr[mid] == target:
-            return mid
-        elif arr[mid] < target:
-            left = mid + 1
-        else:
-            right = mid
-
-    if left > 0 and abs(arr[left] - target) >= abs(arr[left - 1] - target):
-        return left - 1
-    return left
 
 
 def export_table(table: str, path: str, trip: str):
