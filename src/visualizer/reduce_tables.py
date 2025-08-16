@@ -108,7 +108,7 @@ def sum_directory_tables(date: str) -> dict[str, pandas.DataFrame]:
 
     for line in lines:
         dataframes: list[pandas.DataFrame] = [pandas.read_csv(
-            f'{PATH}/{date}/delays/{shape}.csv', delimiter=';') for shape in lines[line]]
+            f'{PATH}/{date}/delays/{shape_id}.csv', delimiter=';', decimal=',') for shape in lines[line] for shape_id in shape]
         for i, df in enumerate(dataframes):
             columns: list[str] = ['stop_id',
                                   'stop_lat', 'stop_lon', 'stop_name']
