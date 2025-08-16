@@ -123,15 +123,20 @@ def sum_directory_tables(date: str, filter: Callable[[str], int]) -> dict[str, p
 
         df: pandas.DataFrame = reduce(lambda x, y: x.merge(
             y, on=['stop_id', 'stop_lat', 'stop_lon', 'stop_name'], how='outer'), dataframes)
-        df = df.fillna(0)
-        columns = [c for c in df.columns if 'delay_' in c]
-        if len(columns) == 0:
+        delays = df.filter(regex=r'delay_\d')
+        not_na_count: pandas.Series = delays.count(
+            axis=1)  # type: ignore
+        if len(delays.columns) == 0:
             continue
-        avg = df[columns].apply(numpy.average, axis=1)
-        index = df[['stop_id', 'stop_lat', 'stop_lon', 'stop_name']]
+        delays.fillna(0, inplace=True)
+
+        avg = delays.apply(numpy.average, axis=1)
+        index = df[['stop_id', 'stop_lat', 'stop_lon', 'stop_name'] +
+                   (['stop_sequence'] if 'stop_sequence' in df.columns else [])]
         assert isinstance(avg, pandas.Series)\
             and isinstance(index, pandas.DataFrame)
         df = index
         df['average'] = avg
+        df['not_na_count'] = not_na_count
         lines_dataframes[line] = df
     return lines_dataframes
