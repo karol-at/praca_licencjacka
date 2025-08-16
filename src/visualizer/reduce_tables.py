@@ -89,7 +89,7 @@ def calculate_delay_averages(weekend: bool | None = None):
         arcpy.management.Delete(table_name)
 
 
-def sum_directory_tables(date: str) -> dict[str, pandas.DataFrame]:
+def sum_directory_tables(date: str, filter: Callable[[str], int]) -> dict[str, pandas.DataFrame]:
     with open(f'{PATH}/{date}/warsaw_shape_map.yml', encoding='utf-8') as file:
         warsaw_shapes = yaml.safe_load(file)
     with open(f'{PATH}/{date}/gdansk_shape_map.yml', encoding='utf-8') as file:
@@ -112,7 +112,10 @@ def sum_directory_tables(date: str) -> dict[str, pandas.DataFrame]:
         for i, df in enumerate(dataframes):
             columns: list[str] = ['stop_id',
                                   'stop_lat', 'stop_lon', 'stop_name']
-            columns += [c for c in df.columns if 'delay_' in c and 'delay_ZTM' not in c]
+            columns += [
+                c for c in df.columns if 'delay_' in c and 'delay_ZTM' not in c and filter(c)]
+            if len(dataframes) == 1:
+                columns += ['stop_sequence']
             selection = df[columns]
             assert isinstance(selection, pandas.DataFrame)
             replacement_columns = {c: f'{c}_{i}' for c in columns}
